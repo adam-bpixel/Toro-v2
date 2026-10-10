@@ -1,6 +1,6 @@
 'use strict';
 const { ComponentType } = require('discord.js');
-const { COMPONENTS_V2, ACCENT_COLOR, container, textBlock, divider } = require('../../utils/render/embeds');
+const { COMPONENTS_V2, ACCENT_COLOR, container, textBlock, divider, notice } = require('../../utils/render/embeds');
 const { disablePanelMessage } = require('../../utils/runtime/panels');
 const activeComponents = require('../../utils/runtime/activeComponents');
 const { ROLES_LIST_EMOJI, TICKET_EMOJI } = require('../../utils/emojis');
@@ -55,6 +55,7 @@ module.exports = {
   usage: '',
   category: 'Information Commands',
   async execute(message) {
+    if (!message.guild) return notice(message, '__This command only works inside a server__');
     await message.guild.members.fetch().catch(() => {});
 
     const sent = await message.reply({

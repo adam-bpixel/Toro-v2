@@ -1,4 +1,4 @@
-const { card } = require('../../utils/render/embeds');
+const { card, notice } = require('../../utils/render/embeds');
 
 module.exports = {
   name: 'boosters',
@@ -7,6 +7,7 @@ module.exports = {
   usage: '',
   category: 'Information Commands',
   async execute(message) {
+    if (!message.guild) return notice(message, '__This command only works inside a server__');
     await message.guild.members.fetch().catch(() => {});
     const boosters = message.guild.members.cache
       .filter((m) => m.premiumSince)

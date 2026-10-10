@@ -17,18 +17,22 @@ async function configOf(guildId) {
   return cache.get(guildId);
 }
 
-const BUILTIN = { a: 'avatar', b: 'banner', r: 'rank', p: 'profile', d: 'daily', u: 'user' };
+const BUILTIN = { a: 'avatar', b: 'banner', r: 'rank', p: 'profile', d: 'daily', u: 'user', ms7: 'clear' };
 const BUILTIN_TARGET = /^(?:<@!?\d+>|\d{15,25})$/;
 
 const HIDDEN = ['avatar', 'banner', 'server', 'user', 'daily'];
 const TAKES_NO_ARGUMENT = new Set(['daily', 'server']);
+const TAKES_AMOUNT = new Set(['clear']);
 
 function isBuiltin(client, content) {
   const [word, ...rest] = content.trim().split(/\s+/);
   const key = String(word).toLowerCase();
   const name = BUILTIN[key] || (HIDDEN.includes(key) ? key : null);
   if (!name || !client.commands.has(name)) return false;
-  return rest.length === 0 || (!TAKES_NO_ARGUMENT.has(name) && rest.length === 1 && BUILTIN_TARGET.test(rest[0]));
+  if (rest.length === 0) return true;
+  if (TAKES_NO_ARGUMENT.has(name)) return false;
+  if (TAKES_AMOUNT.has(name)) return rest.length === 1 && /^\d{1,3}$/.test(rest[0]);
+  return rest.length === 1 && BUILTIN_TARGET.test(rest[0]);
 }
 
 async function allowed(guildId, userId, name) {
