@@ -1,0 +1,4 @@
+node_modules/
+.env
+scripts/
+data/emoji-map.json

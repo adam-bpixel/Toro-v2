@@ -1,0 +1,24 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "A full-featured, self-hosted Discord bot built with discord.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "@napi-rs/canvas": "^0.1.53",
+    "discord.js": "^14.16.0",
+    "dotenv": "^16.4.5",
+    "figlet": "^1.11.4",
+    "gifwrap": "^0.10.1",
+    "gradient-string": "^2.0.2",
+    "mongodb": "^6.9.0",
+    "tweetnacl": "^1.0.3"
+  }
+}
