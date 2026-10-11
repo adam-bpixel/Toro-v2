@@ -18,7 +18,7 @@ module.exports = {
             "components": [
               {
                 "type": 10,
-                "content": "## <:early_supporter:1551750285586731123> Support Center\n\n*Need assistance? Choose a support option below or join [Support Server](<https://discord.gg/EVJNa3SRD7>) to contact our development team!*"
+                "content": "## <:early_supporter:1551750285586731123> Support Center\n\n*Need assistance? Choose a support option below or join [Support Server](<https://discord.gg/zk92wu2Vh>) to contact our development team!*"
               },
               {
                 "type": 14,
@@ -111,7 +111,7 @@ module.exports = {
               "components": [
                 {
                   "type": 10,
-                  "content": "## <:early_supporter:1551750285586731123> Support Center\n\n*Need assistance? Choose a support option below or join [Support Server](<https://discord.gg/EVJNa3SRD7>) to contact our development team!*"
+                  "content": "## <:early_supporter:1551750285586731123> Support Center\n\n*Need assistance? Choose a support option below or join [Support Server](<https://discord.gg/zk92wu2Vh>) to contact our development team!*"
                 },
                 {
                   "type": 14,

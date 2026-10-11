@@ -83,7 +83,7 @@ module.exports = {
                 "components": [
                   {
                     "type": 10,
-                    "content": "### <:prmfree:1551750382206718012> Premium Command\nThis command requires an **active Premium subscription**.\n\n[View Premium plans](<https://discord.gg/EVJNa3SRD7>) for more information."
+                    "content": "### <:prmfree:1551750382206718012> Premium Command\nThis command requires an **active Premium subscription**.\n\n[View Premium plans](<https://discord.gg/zk92wu2Vh>) for more information."
                   },
                   {
                     "type": 10,
@@ -93,7 +93,7 @@ module.exports = {
                 "accessory": {
                   "type": 11,
                   "media": {
-                    "url": "https://cdn.discordapp.com/attachments/1553531361329938523/1553556482669412392/a_2505bb24455553dc2f6ef43ffee02137.gif?ex=6ab9adb9&is=6ab85c39&hm=7a9b092ad55da4c5e0dcb43ecc6c00b72819ac50fa0f5a7a9a5bf1aa8ae1e9bc&"
+                    "url": "{{botAvatar}}"
                   },
                   "description": null,
                   "spoiler": false
@@ -118,7 +118,7 @@ module.exports = {
               },
               {
                 "type": 10,
-                "content": "-# <:point:1551750386967122050> Join our [Support Server](<https://discord.gg/EVJNa3SRD7>) or <:getpremium:1551750391841165342> purchase Premium directly via Discord."
+                "content": "-# <:point:1551750386967122050> Join our [Support Server](<https://discord.gg/zk92wu2Vh>) or <:getpremium:1551750391841165342> purchase Premium directly via Discord."
               },
               {
                 "type": 1,

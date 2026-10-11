@@ -72,7 +72,7 @@ function landingPayload(client, prefix) {
           type: 9,
           components: [textBlock(
             `**__Hello dear__** I am _${client.user.username}_, an entertaining and engaging Discord bot designed to bring laughter and excitement to communities. Packed with features!\n\n`
-            + `*If you need any help, use the [${prefix}support](<https://discord.gg/EVJNa3SRD7>) to get in touch with the developers*\n\n`
+            + `*If you need any help, use the [${prefix}support](<https://discord.gg/zk92wu2Vh>) to get in touch with the developers*\n\n`
             + '- Use </premium:1524978012209152214> to enable Server Premium  ⁘\n- Select a category below to view commands',
           )],
           accessory: { type: 11, media: { url: client.user.displayAvatarURL({ size: 256 }) }, description: 'Bot Icon', spoiler: false },

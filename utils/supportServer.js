@@ -1,5 +1,5 @@
 'use strict';
-const ORIGINAL_URL = 'https://discord.gg/EVJNa3SRD7';
+const ORIGINAL_URL = 'https://discord.gg/zk92wu2Vh';
 
 function normalize(input) {
   const text = String(input || '').trim().replace(/^<|>$/g, '');
