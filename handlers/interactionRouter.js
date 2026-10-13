@@ -10,6 +10,7 @@ const roles = require('./roles');
 const security = require('./security');
 const setup = require('./setup');
 const workmode = require('../models/core/workmode');
+const blacklist = require('../models/core/blacklist');
 const { isOwner } = require('../models/economy/premium');
 
 const exactHandlers = new Map([
@@ -43,6 +44,9 @@ const featureCheckers = [
   { match: setup.isSubscriptionSetupInteraction, handle: (i) => setup.handleSubscriptionSetupInteraction(i) },
   { match: setup.isThemeSetupInteraction, handle: (i) => setup.handleThemeSetupInteraction(i) },
   { match: setup.isAzkarSetupInteraction, handle: (i) => setup.handleAzkarSetupInteraction(i) },
+  { match: setup.isWelcomerSetupInteraction, handle: (i) => setup.handleWelcomerSetupInteraction(i) },
+  { match: setup.isBoostSetupInteraction, handle: (i) => setup.handleBoostSetupInteraction(i) },
+  { match: setup.isHoneypotSetupInteraction, handle: (i) => setup.handleHoneypotSetupInteraction(i) },
   { match: roles.isRoleRequestInteraction, handle: (i) => roles.handleRoleRequestInteraction(i) },
   { match: setup.isSupportInteraction, handle: (i) => setup.handleSupportInteraction(i) },
   { match: setup.isSuggestInteraction, handle: (i) => setup.handleSuggestInteraction(i) },
@@ -50,6 +54,7 @@ const featureCheckers = [
 ];
 
 async function handleChatInput(interaction, client) {
+  if (blacklist.isBlacklisted(interaction.user.id) && !isOwner(interaction.user.id)) return;
   const slash = client.slashCommands.get(interaction.commandName);
   if (interaction.guildId) security.trackCommand(interaction.guildId, interaction.user.id, `/${interaction.commandName}`);
   try {

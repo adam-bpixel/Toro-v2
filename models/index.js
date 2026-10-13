@@ -2,6 +2,7 @@
 const afk = require('./activity/afk');
 const aliases = require('./settings/aliases');
 const autoreply = require('./settings/autoreply');
+const blacklist = require('./core/blacklist');
 const clans = require('./economy/clans');
 const db = require('./core/db');
 const economy = require('./economy/economy');
@@ -21,6 +22,7 @@ module.exports = {
   afk,
   aliases,
   autoreply,
+  blacklist,
   clans,
   db,
   economy,

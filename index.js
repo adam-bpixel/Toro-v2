@@ -11,12 +11,14 @@ const { registerTempVoice } = require('./handlers/voice/tempvoice');
 const { registerSnipe } = require('./models/enforcement/modTools');
 const { installTheme, loadThemes } = require('./models/settings/theme');
 const workmode = require('./models/core/workmode');
+const blacklist = require('./models/core/blacklist');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildModeration,
@@ -34,7 +36,7 @@ const client = new Client({
   makeCache: Options.cacheWithLimits({
     ...Options.DefaultMakeCacheSettings,
     MessageManager: 50,
-    PresenceManager: 0,
+    PresenceManager: 200,
     GuildMemberManager: 200,
     UserManager: 200,
     ThreadManager: 25,
@@ -113,6 +115,7 @@ if (require.main === module) {
   db.connect()
     .then(() => loadThemes().catch((error) => console.error('Could not load the server themes:', error.message)))
     .then(() => workmode.ensureLoaded().catch((error) => console.error('Could not load work mode:', error.message)))
+    .then(() => blacklist.ensureLoaded().catch((error) => console.error('Could not load the blacklist:', error.message)))
     .then(() => client.login(process.env.DISCORD_TOKEN))
     .catch((error) => {
       console.error('Failed to connect to MongoDB (check MONGODB_URI in .env):', error);

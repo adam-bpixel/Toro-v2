@@ -6,6 +6,7 @@ module.exports = {
   description: "View a user's avatar",
   usage: '[ID|@member|username]',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const target = await resolveUser(message, args);
     const avatarURL = target.displayAvatarURL({ size: 1024 });

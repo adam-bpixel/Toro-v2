@@ -7,6 +7,7 @@ module.exports = {
   description: 'Send anonymous whisper message to a user',
   usage: '<ID|@member|username> <message>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const target = await resolveUser(message, args, { fallbackToAuthor: false });
     const rest = message.mentions.users.size ? args.filter((a) => !/^<@!?\d+>$/.test(a)) : args.slice(1);

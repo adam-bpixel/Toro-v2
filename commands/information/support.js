@@ -6,6 +6,7 @@ module.exports = {
   description: "",
   usage: "",
   category: 'Information Commands',
+  dmAllowed: true,
   recorded: {
     "replies": [
       {

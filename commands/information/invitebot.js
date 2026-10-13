@@ -6,6 +6,7 @@ module.exports = {
   description: 'Get the invite link and support server for the bot',
   usage: '',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message) {
     const inviteURL = `https://discord.com/oauth2/authorize?client_id=${message.client.user.id}&permissions=8&integration_type=0&scope=bot`;
     await message.reply(await localize(message, {

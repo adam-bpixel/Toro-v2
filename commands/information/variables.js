@@ -72,6 +72,7 @@ module.exports = {
   description: 'Display all available variables for the system',
   usage: '<guild|user|channel|time>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const section = SECTIONS[(args[0] || '').toLowerCase()];
     if (!section) return message.reply(await localize(message, { ...helpCard(), allowedMentions: { repliedUser: true } }));

@@ -6,6 +6,7 @@ module.exports = {
   description: 'Search for apps on the Apple App Store',
   usage: '<app name>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     if (!args.length) {
       return usageCard(message, {

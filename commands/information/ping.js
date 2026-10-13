@@ -7,6 +7,7 @@ module.exports = {
   description: 'Check bot latency',
   usage: '',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args, client) {
     const started = Date.now();
     const sent = await card(message, { title: 'Ping', lines: ['__Pinging...__'] });

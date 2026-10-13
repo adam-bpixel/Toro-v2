@@ -13,6 +13,7 @@ module.exports = {
   description: 'Get FiveM server information',
   usage: '<server_id|ip:port|name>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     if (!args.length) {
       return card(message, {

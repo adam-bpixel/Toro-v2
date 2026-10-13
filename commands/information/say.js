@@ -7,6 +7,7 @@ module.exports = {
   description: 'Convert text to voice message',
   usage: '<text>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const text = args.join(' ').replace(/<a?:\w+:\d+>|<[@#][&!]?\d+>/g, '').trim();
     if (!text) return usageCard(message, { summary: 'Convert text to voice message', usage: '&say <text>' });

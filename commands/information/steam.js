@@ -11,6 +11,7 @@ module.exports = {
   description: 'Get Steam user information by username or SteamID64',
   usage: '<username|SteamID64>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const query = (args[0] || '').replace(/^(?:https?:\/\/)?steamcommunity\.com\/(?:id|profiles)\//i, '').replace(/\/+$/, '');
     if (!query) return usageCard(message, { summary: 'Get Steam user information by username or SteamID64', usage: '&steam <username|SteamID64>' });

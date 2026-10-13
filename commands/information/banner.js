@@ -7,6 +7,7 @@ module.exports = {
   description: "View a user's banner",
   usage: '[ID|@member|username]',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const target = await resolveUser(message, args);
     const fetched = await message.client.users.fetch(target.id, { force: true }).catch(() => null);

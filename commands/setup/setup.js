@@ -2217,7 +2217,7 @@ module.exports = {
   const { container } = require('../../utils/render/embeds');
   const { flow } = module.exports.recorded;
   const ID = (name) => `${name}_1398395532103254157`;
-  const PAGES = 6;
+  const PAGES = 7;
 
   const PAGE_BUTTONS = {
     4: [
@@ -2235,6 +2235,11 @@ module.exports = {
     6: [
       ['setup_autoreply', 'Auto Reply', 'Configure auto replies for specific messages'],
       ['setup_noprefix', 'No Prefix', 'Configure commands that run without a prefix'],
+      ['setup_welcomer', 'Welcomer', 'Configure welcome notification for new members'],
+      ['setup_boost', 'Boost Notification', 'Configure boost notification channel and message'],
+    ],
+    7: [
+      ['setup_honeypot', 'Honeypot', 'Set a trap channel that softbans compromised accounts'],
       ['setup_azkar', 'Azkar', 'Send Azkar reminders to a channel on a schedule'],
     ],
   };
@@ -2242,10 +2247,20 @@ module.exports = {
   function makePage(number, { nextDisabled = false } = {}) {
     const copy = JSON.parse(JSON.stringify(flow.states.s3));
     const card = copy.components[0];
-    const sections = card.components.filter((c) => c.type === 9);
+    let sections = card.components.filter((c) => c.type === 9);
     const dropdown = sections[0].components[0].content.match(/^- (<:[^>]+>)/)[1];
-    for (const spare of sections.slice(PAGE_BUTTONS[number].length)) card.components.splice(card.components.indexOf(spare) - 1, 2);
-    PAGE_BUTTONS[number].forEach(([customId, name, text, disabled], i) => {
+    const items = PAGE_BUTTONS[number];
+    if (items.length < sections.length) {
+      for (const spare of sections.slice(items.length)) card.components.splice(card.components.indexOf(spare) - 1, 2);
+      sections = sections.slice(0, items.length);
+    } else if (items.length > sections.length) {
+      for (let i = sections.length; i < items.length; i++) {
+        const clone = JSON.parse(JSON.stringify(sections[sections.length - 1]));
+        card.components.splice(card.components.length - 1, 0, clone, { type: 14, spacing: 1, divider: true });
+        sections.push(clone);
+      }
+    }
+    items.forEach(([customId, name, text, disabled], i) => {
       sections[i].components[0].content = `- ${dropdown} __${text}__  ⁘`;
       Object.assign(sections[i].accessory, { custom_id: ID(customId), label: name });
       if (disabled) sections[i].accessory.disabled = true;
@@ -2259,7 +2274,8 @@ module.exports = {
   }
   flow.states.s4 = makePage(4);
   flow.states.s5 = makePage(5);
-  flow.states.s6 = makePage(6, { nextDisabled: true });
+  flow.states.s6 = makePage(6);
+  flow.states.s7 = makePage(7, { nextDisabled: true });
 
   const notSetUp = (from, customId) => ({
     from,
@@ -2286,11 +2302,16 @@ module.exports = {
     page('s5', 4, 's4'),
     page('s5', 6, 's6'),
     page('s6', 5, 's5'),
+    page('s6', 7, 's7'),
+    page('s7', 6, 's6'),
     ...PAGE_BUTTONS[4].map(([customId]) => notSetUp('s4', ID(customId))),
     ...PAGE_BUTTONS[5].filter(([, , , disabled]) => !disabled).map(([customId]) => notSetUp('s5', ID(customId))),
     notSetUp('s6', ID('setup_autoreply')),
     notSetUp('s6', ID('setup_noprefix')),
-    notSetUp('s6', ID('setup_azkar')),
+    notSetUp('s6', ID('setup_welcomer')),
+    notSetUp('s6', ID('setup_boost')),
+    notSetUp('s7', ID('setup_honeypot')),
+    notSetUp('s7', ID('setup_azkar')),
   );
 
   for (const snap of [module.exports.recorded.replies[0], ...Object.values(flow.states)]) {

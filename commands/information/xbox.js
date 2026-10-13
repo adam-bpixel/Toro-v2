@@ -7,6 +7,7 @@ module.exports = {
   description: 'Get Xbox Gamertag information',
   usage: '<gamertag>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const gamertag = args.join(' ').trim();
     if (!gamertag) return usageCard(message, { summary: 'Get Xbox Gamertag information', usage: '&xbox <gamertag>' });

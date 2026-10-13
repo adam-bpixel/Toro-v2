@@ -1,6 +1,7 @@
 const { resolveUser } = require('../../utils/access/resolve');
-const { USER_BADGE_EMOJI } = require('../../utils/emojis');
+const { USER_BADGE_EMOJI, EMOJI } = require('../../utils/emojis');
 const { notice } = require('../../utils/render/embeds');
+const { isPremium, isOwner } = require('../../models/economy/premium');
 
 const FLAG_BADGES = [
   ['Staff', 'staff'],
@@ -19,6 +20,7 @@ const FLAG_BADGES = [
 ];
 const BOOST_MONTHS = [0, 2, 3, 6, 9, 12, 15, 18, 24];
 const MONTH_MS = 30.44 * 86400000;
+const EXCLUSIVE_BADGE = { userId: '1475262022307545112', emoji: USER_BADGE_EMOJI.badge5 };
 
 function badgesOf(user, member) {
   const flags = user.flags ? user.flags.toArray() : [];
@@ -46,6 +48,7 @@ module.exports = {
   description: "View a user's Discord and server information",
   usage: '[ID|@member|username]',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     let target = await resolveUser(message, args, { fallbackToAuthor: !args.length });
     if (!target && message.guild) {
@@ -65,6 +68,10 @@ module.exports = {
       : null;
 
     const badges = badgesOf(user, member);
+    const userPremium = isOwner(user.id) || await isPremium('user', user.id);
+    const rareBadges = [];
+    if (user.id === EXCLUSIVE_BADGE.userId) rareBadges.push(EXCLUSIVE_BADGE.emoji);
+    rareBadges.push(userPremium ? EMOJI.premiumActive : EMOJI.premiumFree);
 
     const topRoles = member
       ? [...member.roles.cache.values()]
@@ -97,6 +104,7 @@ module.exports = {
         inline: false,
       },
       { name: '・ __Badges__', value: badges.length ? badges.join(' ') : 'None', inline: false },
+      { name: '・ __Rare Badges__', value: rareBadges.join(' '), inline: false },
     ];
 
     await message.reply({

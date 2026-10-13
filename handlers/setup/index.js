@@ -8,6 +8,9 @@ const counters = require('./counters');
 const themeSetup = require('./themeSetup');
 const azkarSetup = require('./azkarSetup');
 const azkar = require('./azkar');
+const welcomerSetup = require('./welcomerSetup');
+const boostSetup = require('./boostSetup');
+const honeypotSetup = require('./honeypotSetup');
 const autoreplySetup = require('./autoreplySetup');
 const clanManagerSetup = require('./clanManagerSetup');
 const subscriptionSetup = require('./subscriptionSetup');
@@ -25,6 +28,9 @@ module.exports = {
   ...themeSetup,
   ...azkarSetup,
   ...azkar,
+  ...welcomerSetup,
+  ...boostSetup,
+  ...honeypotSetup,
   ...autoreplySetup,
   ...clanManagerSetup,
   ...subscriptionSetup,

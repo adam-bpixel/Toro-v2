@@ -53,11 +53,11 @@ module.exports = {
     const reason = args.slice(1).join(' ');
     const { warnId, total } = await addWarning(message.guild.id, target.id, reason, message.author.id);
     await recordAction(message.guild.id, 'warn');
-    await target.send(`You have been warned in **${message.guild.name}**\nReason: ${reason}\nID: \`${warnId}\``).catch(() => {});
 
     const lines = [`__Warned__ **${target.username}**`, `__Reason__ : ${reason}`, `__Total warnings__ : \`${total}\``];
     const maxWarn = await getMaxWarn(message.guild.id);
     if (maxWarn && total >= maxWarn.count) lines.push(await punish(member, maxWarn, total));
     await card(message, { title: `${EMOJI.success} Success`, lines });
+    target.send(`You have been warned in **${message.guild.name}**\nReason: ${reason}\nID: \`${warnId}\``).catch(() => {});
   },
 };

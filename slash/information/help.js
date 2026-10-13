@@ -7,7 +7,7 @@ const ROWS = [
 
 module.exports = {
   name: "help",
-  data: buildData("help", ROWS),
+  data: buildData("help", ROWS, { dm: true }),
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

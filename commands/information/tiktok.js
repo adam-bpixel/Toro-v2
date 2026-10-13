@@ -10,6 +10,7 @@ module.exports = {
   description: 'Download TikTok videos and photo posts',
   usage: '<TikTok link>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const url = (args[0] || '').replace(/^<|>$/g, '');
     if (!/^https?:\/\/(?:[\w-]+\.)?tiktok\.com\//i.test(url)) {

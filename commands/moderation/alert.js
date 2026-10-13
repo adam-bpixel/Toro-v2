@@ -39,11 +39,11 @@ module.exports = {
 
     const reason = args.slice(1).join(' ');
     const alertId = await logAlert(message.guild.id, target.id, reason, message.author.id);
-    await target.send(`You have been alerted in **${message.guild.name}**\nReason: ${reason}\nID: \`${alertId}\``).catch(() => {});
 
     await card(message, {
       title: `${EMOJI.success} Success`,
       lines: [`**${target.username}** __has been Alerted__`],
     });
+    target.send(`You have been alerted in **${message.guild.name}**\nReason: ${reason}\nID: \`${alertId}\``).catch(() => {});
   },
 };

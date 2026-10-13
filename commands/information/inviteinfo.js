@@ -7,6 +7,7 @@ module.exports = {
   description: 'View invite information',
   usage: '<invite link|code>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args, client) {
     if (!args[0]) return usageCard(message, { summary: 'View invite information', usage: '&inviteinfo <invite link|code>' });
     const code = args[0]

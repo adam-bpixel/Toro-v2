@@ -16,6 +16,7 @@ module.exports = {
   description: 'Check IQ',
   usage: '[ID|@member|username]',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const target = await resolveUser(message, args);
     const iq = Math.floor(Math.random() * 151) + 50;

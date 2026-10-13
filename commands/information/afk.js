@@ -7,6 +7,7 @@ module.exports = {
   description: 'Set your AFK status with an optional message',
   usage: '[reason]',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const reason = args.join(' ') || 'AFK';
     setAfk(message.author.id, reason);

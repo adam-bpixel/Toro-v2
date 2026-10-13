@@ -396,7 +396,7 @@ function asMessage(interaction, args, resolved) {
 
 // Builds the Discord command JSON (name/description/options, with subcommand(-group) nesting)
 // from a per-command ROWS table shaped like [subKey, description, options, handler].
-function buildData(name, rows) {
+function buildData(name, rows, { dm = false } = {}) {
   const entry = { name, description: name, options: [] };
   for (const [subKey, description, options] of rows) {
     const [first, second] = subKey ? subKey.split(' ') : [];
@@ -410,6 +410,10 @@ function buildData(name, rows) {
       entry.options = options;
     }
     entry.description = first ? `${name} commands` : description;
+  }
+  if (dm) {
+    entry.integration_types = [0, 1];
+    entry.contexts = [0, 1, 2];
   }
   return entry;
 }
@@ -455,8 +459,9 @@ async function dispatch(interaction, rows) {
     args = args.join(' ').split(/\s+/).filter(Boolean);
   }
   const message = asMessage(interaction, args, resolved);
+  const command = handler && handler.command ? interaction.client.commands.get(handler.command) : null;
 
-  if (!interaction.guild && !(handler && handler.command === 'help')) {
+  if (!interaction.guild && !(command && command.dmAllowed)) {
     await notice(message, '__This command only works inside a server__');
     return true;
   }
@@ -465,7 +470,6 @@ async function dispatch(interaction, rows) {
   } else if (handler.native) {
     await natives[handler.native](message, get, sub);
   } else {
-    const command = interaction.client.commands.get(handler.command);
     if (!command) await missing(message);
     else if (lacksPermission(message, command)) await notice(message, "__You don't have permission__");
     else await command.execute(message, args);

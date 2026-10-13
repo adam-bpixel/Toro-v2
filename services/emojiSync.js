@@ -8,7 +8,11 @@ const row = (label, value) => console.log(`${pinkGradient(`${label.padEnd(15)} :
 
 const SOURCE_FILE = path.join(__dirname, '..', 'utils', 'emojis.js');
 const MAP_FILE = path.join(__dirname, '..', 'data', 'emoji-map.json');
-const BOT_LOGO_EMOJI_ID = '1551750443221393448';
+const BOT_LOGO_EMOJIS = [
+  { trackId: '1551750443221393448', name: 'torocc' },
+  { trackId: '1477838126880657518', name: 'vynelcc' },
+];
+const BOT_LOGO_TRACK_IDS = new Set(BOT_LOGO_EMOJIS.map((logo) => logo.trackId));
 
 function collectEmojis() {
   const source = fs.readFileSync(SOURCE_FILE, 'utf8');
@@ -28,7 +32,8 @@ async function syncEmojis(client) {
   if (process.env.SYNC_EMOJIS !== 'true') return;
 
   const map = fs.existsSync(MAP_FILE) ? JSON.parse(fs.readFileSync(MAP_FILE, 'utf8')) : {};
-  const emojis = [...collectEmojis()].filter(([id]) => !map[id]);
+  const useAvatarLogo = process.env.USE_BOT_AVATAR_LOGO === 'true';
+  const emojis = [...collectEmojis()].filter(([id]) => !map[id] && !(useAvatarLogo && BOT_LOGO_TRACK_IDS.has(id)));
   if (!emojis.length) {
     row('Emoji sync', 'skipped, nothing new to sync');
     return;
@@ -111,22 +116,36 @@ async function syncBotAvatarLogo(client) {
 
   const map = fs.existsSync(MAP_FILE) ? JSON.parse(fs.readFileSync(MAP_FILE, 'utf8')) : {};
   const avatarHash = client.user.avatar;
-  const current = map[BOT_LOGO_EMOJI_ID];
-  const currentId = current && typeof current === 'object' ? current.id : current;
-  if (current && typeof current === 'object' && current.avatarHash === avatarHash) return;
+  const stale = BOT_LOGO_EMOJIS.filter(({ trackId }) => {
+    const current = map[trackId];
+    return !(current && typeof current === 'object' && current.avatarHash === avatarHash);
+  });
+  if (!stale.length) return;
 
   const size = 256;
   const animated = (avatarHash || '').startsWith('a_');
   const avatarURL = client.user.displayAvatarURL({ extension: animated ? 'gif' : 'png', size });
   const buffer = animated ? await circleCroppedGif(avatarURL) : await circleCroppedStatic(avatarURL, size);
 
-  if (currentId) await client.application.emojis.delete(currentId).catch(() => {});
+  const existing = await client.application.emojis.fetch().catch(() => null);
+  const existingByName = new Map((existing ? [...existing.values()] : []).map((e) => [e.name, e.id]));
 
-  const created = await client.application.emojis.create({ name: 'torocc', attachment: buffer });
-  map[BOT_LOGO_EMOJI_ID] = { id: created.id, animated, avatarHash };
+  let updated = 0;
+  for (const { trackId, name } of stale) {
+    const existingId = existingByName.get(name);
+    if (existingId) await client.application.emojis.delete(existingId).catch(() => {});
+    try {
+      const created = await client.application.emojis.create({ name, attachment: buffer });
+      map[trackId] = { id: created.id, animated, avatarHash };
+      updated += 1;
+    } catch (error) {
+      console.error(`Could not update bot avatar logo emoji "${name}":`, error.message);
+    }
+  }
+
   fs.mkdirSync(path.dirname(MAP_FILE), { recursive: true });
   fs.writeFileSync(MAP_FILE, JSON.stringify(map, null, 2));
-  row('Bot avatar logo', currentId ? 'updated after an avatar change - restart the bot once to use it everywhere' : 'created - restart the bot once to use it everywhere');
+  if (updated > 0) row('Bot avatar logo', `updated ${updated}/${stale.length} - restart the bot once to use it everywhere`);
 }
 
 module.exports = { syncEmojis, syncBotAvatarLogo };

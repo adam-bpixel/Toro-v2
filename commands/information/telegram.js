@@ -11,6 +11,7 @@ module.exports = {
   description: 'Show Telegram profile information',
   usage: '<username>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const username = (args[0] || '').replace(/^(?:https?:\/\/)?(?:t\.me\/|telegram\.me\/)/i, '').replace(/^@/, '').split(/[/?#]/)[0];
     if (!/^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(username)) {

@@ -71,7 +71,7 @@ module.exports = {
     if (!message.guild) return;
 
     if (sub === 'list') {
-      const emojis = [...message.guild.emojis.cache.values()];
+      const emojis = [...message.guild.emojis.cache.values()].filter((e) => e.available);
       if (!emojis.length) return card(message, { title: 'Server Emojis', lines: ['__No emojis in this server__'] });
       let text = '';
       let shown = 0;

@@ -7,6 +7,7 @@ module.exports = {
   description: 'Get Minecraft server information',
   usage: '<server address>',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message, args) {
     const address = (args[0] || '').trim();
     if (!address) return usageCard(message, { summary: 'Get Minecraft server information', usage: '&minecraft <server address>' });

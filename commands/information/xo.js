@@ -98,6 +98,7 @@ module.exports = {
   description: 'Play Tic-Tac-Toe with random players across servers',
   usage: '',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message) {
     const user = message.author;
     if (busy.has(user.id)) return notice(message, '__You are already searching for or playing a game__');

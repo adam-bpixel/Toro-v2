@@ -13,7 +13,9 @@ const { getGuildConfig, isCommandRestricted } = require('../models/core/moderati
 const { isBareBotMention, prefixPayload, prefixesFor, matchPrefix } = require('../models/settings/prefix');
 const { isOwner } = require('../models/economy/premium');
 const workmode = require('../models/core/workmode');
+const blacklist = require('../models/core/blacklist');
 const { lacksPermission } = require('../utils/access/gate');
+const { checkHoneypot } = require('../handlers/setup/honeypotSetup');
 
 module.exports = {
   name: Events.MessageCreate,
@@ -21,6 +23,7 @@ module.exports = {
   async execute(message, client) {
     if (message.author.bot) return;
     if (workmode.isWorkMode() && !isOwner(message.author.id)) return;
+    if (message.guild && await checkHoneypot(message).catch(() => false)) return;
     const { server: serverPrefix, personal: personalPrefix } = await prefixesFor(message.guild?.id, message.author.id);
     if (!message.reference && isBareBotMention(message.content, client.user.id)) {
       message.reply({ ...prefixPayload(serverPrefix, personalPrefix), allowedMentions: { repliedUser: false } }).catch(() => {});
@@ -66,6 +69,8 @@ module.exports = {
       command = target && client.commands.get(target);
     }
     if (!command) return;
+    if (blacklist.isBlacklisted(message.author.id) && !isOwner(message.author.id)) return;
+    if (!message.guild && !command.dmAllowed && !isOwner(message.author.id)) return;
     if (message.guild) {
       const config = await getGuildConfig(message.guild.id);
       if (isCommandRestricted(config, command.name, message.channel.id)) return;

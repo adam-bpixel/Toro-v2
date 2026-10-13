@@ -61,6 +61,11 @@ const navRow = (page, pages) => ({
   ],
 });
 
+function premiumMention(client) {
+  const command = client.application?.commands.cache.find((c) => c.name === 'premium');
+  return `</premium:${command ? command.id : client.application?.id || client.user.id}>`;
+}
+
 function landingPayload(client, prefix) {
   return {
     flags: COMPONENTS_V2,
@@ -73,7 +78,7 @@ function landingPayload(client, prefix) {
           components: [textBlock(
             `**__Hello dear__** I am _${client.user.username}_, an entertaining and engaging Discord bot designed to bring laughter and excitement to communities. Packed with features!\n\n`
             + `*If you need any help, use the [${prefix}support](<https://discord.gg/zk92wu2Vh>) to get in touch with the developers*\n\n`
-            + '- Use </premium:1524978012209152214> to enable Server Premium  ⁘\n- Select a category below to view commands',
+            + `- Use ${premiumMention(client)} to enable Server Premium  ⁘\n- Select a category below to view commands`,
           )],
           accessory: { type: 11, media: { url: client.user.displayAvatarURL({ size: 256 }) }, description: 'Bot Icon', spoiler: false },
         },
@@ -127,6 +132,7 @@ module.exports = {
   description: 'Show all available commands',
   usage: '',
   category: 'Information Commands',
+  dmAllowed: true,
   async execute(message) {
     const { client } = message;
     const prefix = await prefixOf(message);
