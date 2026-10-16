@@ -13,6 +13,7 @@ const ROWS = [
 module.exports = {
   name: "noprefix",
   data: buildData("noprefix", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

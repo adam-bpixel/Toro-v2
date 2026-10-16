@@ -1,7 +1,7 @@
 'use strict';
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const { buildPayload, contextOf } = require('../../utils/runtime/replay');
-const { container, COMPONENTS_V2, divider, textBlock } = require('../../utils/render/embeds');
+const { container, COMPONENTS_V2, ACCENT_COLOR, divider, textBlock } = require('../../utils/render/embeds');
 const { getGuildConfig, setLogChannel, setLogEnabled } = require('../../models/core/moderation');
 const { CATEGORIES, categoryOf, forgetGuild } = require('./logs');
 
@@ -22,7 +22,6 @@ const isLogsSetupInteraction = (interaction) => (
 ) || (interaction.isModalSubmit() && interaction.customId.startsWith(MODAL_PREFIX));
 
 const notice = (lines) => ({ flags: COMPONENTS_V2 | EPHEMERAL, components: [container({ title: 'Notice', lines: [].concat(lines) })] });
-const emojiOf = ({ name, id }) => `<:${name}:${id}>`;
 const label = (text, component) => ({ type: 18, label: text, component });
 
 function buildModal(category) {
@@ -45,6 +44,52 @@ function buildModal(category) {
 const row = (component) => ({ type: 1, components: [component] });
 const byLabel = (events) => [...events].sort((x, y) => x.label.localeCompare(y.label));
 
+const BANNER = 'https://cdn.discordapp.com/attachments/1553531361329938523/1553556444643590175/ezgif-7330ede79c09b445.gif?ex=6ab9adb0&is=6ab85c30&hm=31df96012026a1cf3e5df252744eac73ac52f7a41ed08e83fc48987dca467edc&';
+const BULLET = '<:4151dropdownmenu:1551750312304443395>';
+
+// What each category covers, shown under it in the "create" menu of the panel.
+const SUMMARY = {
+  role_events: 'Role Created, Role Deleted, Role Updated',
+  member_events: 'Member Kicked, Banned, Roles, etc.',
+  channel_events: 'Channel Created, Channel Deleted, etc.',
+  message_events: 'Message Deleted, Bulk Delete, etc.',
+  webhook_events: 'Webhook Created, Webhook Updated, etc.',
+  integration_events: 'Integration Created, Integration Deleted',
+  invite_events: 'Invite Created, Invite Deleted',
+  voice_events: 'Voice Joined, Voice Left, etc.',
+  thread_events: 'Thread Created, Thread Updated, etc.',
+  server_events: 'Server Updated, Event Created/Updated/Deleted',
+  emoji_sticker_events: 'Sticker & Emoji Created, Deleted, etc.',
+  automod_events: 'Rule Created, Block Message, etc.',
+  soundboard_events: 'Soundboard Created, Updated, Deleted',
+};
+
+const viewMenu = () => row({
+  type: 3, placeholder: 'Select log category to show config', min_values: 1, max_values: 1, custom_id: VIEW_SELECT_ID,
+  options: CATEGORIES.map((c) => ({ value: c.key, label: c.label, emoji: c.emoji, description: `View all ${c.label.replace(/ Events$/, '').toLowerCase()} event logs` })),
+});
+
+// The panel opened by the "Logs Server" button of &setup. {{displayName}} is filled by buildPayload.
+const PANEL = {
+  content: '', embeds: [], v2: true, attachments: [],
+  components: [{
+    type: 17, accent_color: ACCENT_COLOR, spoiler: false,
+    components: [
+      { type: 12, items: [{ media: { url: BANNER }, description: "{{displayName}}'s server Logs Server", spoiler: false }] },
+      divider(),
+      textBlock('## <:param:1551750316867850291> Logs Server Setup'), divider(),
+      textBlock(`- ${BULLET} __Select type to create event__  ⁘`), divider(),
+      row({
+        type: 3, placeholder: 'Select log event category', min_values: 1, max_values: 1, custom_id: CREATE_SELECT_ID,
+        options: CATEGORIES.map((c) => ({ value: c.key, label: c.label, emoji: c.emoji, description: SUMMARY[c.key] })),
+      }),
+      divider(),
+      textBlock(`- ${BULLET} __Select type to show config__  ⁘`), divider(),
+      viewMenu(),
+    ],
+  }],
+};
+
 function configCard(guild, category, config) {
   const saved = config.logChannels || {};
   const off = config.logDisabled || {};
@@ -57,14 +102,11 @@ function configCard(guild, category, config) {
   return {
     flags: COMPONENTS_V2,
     components: [{
-      type: 17, accent_color: 13944790, spoiler: false,
+      type: 17, accent_color: ACCENT_COLOR, spoiler: false,
       components: [
         textBlock(`## ${category.key.replace(/_/g, ' ')} Configuration`), divider(), textBlock(lines), divider(),
         row({ type: 3, placeholder: 'Select log to enable/disable', options, min_values: 1, max_values: 1, custom_id: `${TOGGLE_PREFIX}${category.key}` }), divider(),
-        row({
-          type: 3, placeholder: 'Select log category to show config', min_values: 1, max_values: 1, custom_id: VIEW_SELECT_ID,
-          options: CATEGORIES.map((c) => ({ value: c.key, label: c.label, emoji: c.emoji, description: `View all ${c.key.replace(/_events$/, '').replace(/_/g, ' ')} event logs` })),
-        }),
+        viewMenu(),
       ],
     }],
   };
@@ -72,7 +114,7 @@ function configCard(guild, category, config) {
 
 const isConfigCard = (message) => JSON.stringify(message.components.map((c) => c.toJSON())).includes(TOGGLE_PREFIX);
 
-async function handleLogsSetupInteraction(interaction, commands) {
+async function handleLogsSetupInteraction(interaction) {
   if (!interaction.inGuild()) return;
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply(notice('__You need the Administrator permission to set up logs__'));
@@ -81,8 +123,7 @@ async function handleLogsSetupInteraction(interaction, commands) {
   const config = () => getGuildConfig(guild.id);
 
   const panel = async () => {
-    const snap = commands.get('setup').recorded.flow.transitions.find((t) => t.custom_id === PANEL_BUTTON_ID).reply[0];
-    const payload = buildPayload(snap, await contextOf(interaction), { interactive: true });
+    const payload = buildPayload(PANEL, await contextOf(interaction), { interactive: true });
     return { ...payload, flags: (payload.flags || 0) | EPHEMERAL };
   };
 

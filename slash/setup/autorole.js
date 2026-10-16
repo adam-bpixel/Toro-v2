@@ -11,6 +11,7 @@ const ROWS = [
 module.exports = {
   name: "autorole",
   data: buildData("autorole", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

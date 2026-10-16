@@ -1,5 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const { notice } = require('../../utils/render/embeds');
+const activeComponents = require('../../utils/runtime/activeComponents');
 
 const COLOR = 13944790;
 const SEARCH_MS = 120_000;
@@ -55,6 +56,7 @@ function finish(game, result) {
   for (const p of game.players) {
     busy.delete(p.user.id);
     if (p.collector) p.collector.stop('done');
+    if (p.message) activeComponents.release(p.message.id);
   }
   return Promise.all(game.players.map((p) => p.message.edit(render(game, p, result)).catch(() => {})));
 }
@@ -67,6 +69,7 @@ function startGame(first, second) {
   return Promise.all(game.players.map(async (p, index) => {
     p.message = await p.channel.send(render(game, p)).catch(() => null);
     if (!p.message) return;
+    activeComponents.claim(p.message.id);
     p.collector = p.message.createMessageComponentCollector({ componentType: ComponentType.Button, idle: IDLE_MS });
     p.collector.on('collect', async (interaction) => {
       if (interaction.user.id !== p.user.id) return interaction.reply({ content: "This isn't your game.", ephemeral: true });
@@ -108,6 +111,7 @@ module.exports = {
       const opponent = waiting;
       waiting = null;
       clearTimeout(opponent.timer);
+      activeComponents.release(opponent.message.id);
       opponent.message.delete().catch(() => {});
       return startGame({ user: opponent.user, channel: opponent.channel }, { user, channel: message.channel });
     }
@@ -120,12 +124,14 @@ module.exports = {
       components: [row],
       allowedMentions: { repliedUser: false },
     });
+    activeComponents.claim(searching.id);
     const entry = { user, channel: message.channel, message: searching, timer: null };
     waiting = entry;
 
     const leave = (text) => {
       if (waiting === entry) waiting = null;
       busy.delete(user.id);
+      activeComponents.release(searching.id);
       clearTimeout(entry.timer);
       return searching.edit({ embeds: [{ title: 'Tic-Tac-Toe', description: text, color: COLOR }], components: [] }).catch(() => {});
     };

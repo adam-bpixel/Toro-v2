@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "timeout",
   data: buildData("timeout", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

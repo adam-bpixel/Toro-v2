@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "lint": "eslint .",
+    "test": "node --test test/",
+    "check": "npm run lint && npm test",
+    "deploy": "node deploy-commands.js"
   },
   "engines": {
     "node": ">=18"
@@ -20,5 +24,10 @@
     "gradient-string": "^2.0.2",
     "mongodb": "^6.9.0",
     "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0"
   }
 }

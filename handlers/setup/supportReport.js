@@ -1,4 +1,5 @@
 'use strict';
+const { PermissionFlagsBits } = require('discord.js');
 const { COMPONENTS_V2, ACCENT_COLOR, container } = require('../../utils/render/embeds');
 const { ROLE_REQUEST_EMOJI: E, TICKET_EMOJI } = require('../../utils/emojis');
 const { OPEN_COLOR, CLOSE_COLOR } = require('../tickets/ticketActions');
@@ -37,11 +38,29 @@ const KINDS = {
     acceptedVerdict: 'Handled by Staff',
     rejectedVerdict: 'Dismissed',
   },
+  premium: {
+    option: 'premium',
+    modalId: 'premium_inquiry_modal',
+    modalTitle: 'Custom Bot Premium Inquiry',
+    reportTitle: 'New Premium Inquiry',
+    dmTitle: 'Premium Inquiry Update',
+    descLabel: 'What are you looking for?',
+    descPlaceholder: 'Features or services you need, your budget and timeline',
+    proofLabel: 'Reference (Image / Video)',
+    acceptLabel: 'Contacted',
+    rejectLabel: 'Declined',
+    acceptedVerdict: 'Our team will contact you',
+    rejectedVerdict: 'Declined',
+  },
 };
+const channelIdFor = (kind) => ({
+  bugs: process.env.BUG_REPORT_CHANNEL_ID,
+  abuse: process.env.ABUSE_REPORT_CHANNEL_ID,
+  premium: process.env.PREMIUM_INQUIRY_CHANNEL_ID || process.env.BUG_REPORT_CHANNEL_ID,
+})[kind.option];
 
 const MODAL_IDS = Object.values(KINDS).map((k) => k.modalId);
 const kindOfModal = (id) => Object.values(KINDS).find((k) => k.modalId === id);
-const kindOfDecision = (id) => (id.startsWith('support_acc_') || id.startsWith('support_rej_') ? (id.startsWith('support_acc_') ? 'accept' : 'reject') : null);
 
 const isSupportInteraction = (interaction) =>
   (interaction.isStringSelectMenu() && interaction.customId === MENU_ID) ||
@@ -136,7 +155,7 @@ async function handleSubmit(interaction) {
   }
 
   const supportGuildId = process.env.SUPPORT_SERVER_ID;
-  const channelId = kind.option === 'bugs' ? process.env.BUG_REPORT_CHANNEL_ID : process.env.ABUSE_REPORT_CHANNEL_ID;
+  const channelId = channelIdFor(kind);
 
   let targetChannel = null;
   if (supportGuildId && channelId) {
@@ -162,13 +181,15 @@ async function handleSubmit(interaction) {
 }
 
 async function handleDecision(interaction) {
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
+    return interaction.reply(notice('__You need the Manage Messages permission to review reports__'));
+  }
   const isAccept = interaction.customId.startsWith('support_acc_');
   const [, , applicantId] = interaction.customId.split('_');
 
   const card = interaction.message.components[0].toJSON();
   const title = card.components[0]?.content || '';
-  const isBug = title.includes('Bug');
-  const kind = isBug ? KINDS.bug : KINDS.abuse;
+  const kind = Object.values(KINDS).find((k) => title.includes(k.reportTitle)) || KINDS.abuse;
 
   const verdict = isAccept ? kind.acceptedVerdict : kind.rejectedVerdict;
   const color = isAccept ? OPEN_COLOR : CLOSE_COLOR;

@@ -1,6 +1,6 @@
 'use strict';
 const path = require('node:path');
-const { loadImage } = require('@napi-rs/canvas');
+const { loadImage } = require('../utils/render/canvas');
 
 const MANIFEST = path.join(__dirname, '..', 'data', 'hosted-assets.json');
 

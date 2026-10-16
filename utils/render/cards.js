@@ -1,6 +1,6 @@
 'use strict';
 const path = require('path');
-const { createCanvas, loadImage } = require('@napi-rs/canvas');
+const { createCanvas, loadImage } = require('./canvas');
 const { tierOf, badgeImage } = require('./rankBadges');
 const { assetImage } = require('../../services/assetHost');
 const { compact, comma, duration } = require('../format');
@@ -106,7 +106,7 @@ async function drawAvatar(ctx, url, x, y, size, radius, shape = 'square') {
   ctx.restore();
 }
 
-const RANK_BG_PATH = path.join(__dirname, '..', 'data', 'images', 'rank_bg.png');
+const RANK_BG_PATH = path.join(__dirname, '..', '..', 'data', 'images', 'rank_bg.png');
 let rankBgPromise = null;
 function loadRankBackground() {
   if (!rankBgPromise) {
@@ -437,7 +437,7 @@ async function renderRankCard({
   return canvas.encode('webp', CARD_QUALITY);
 }
 
-const X_LOGO_PATH = path.join(__dirname, '..', 'data', 'images', 'x_logo.svg');
+const X_LOGO_PATH = path.join(__dirname, '..', '..', 'data', 'images', 'x_logo.svg');
 let xLogoPromise = null;
 function loadXLogo() {
   if (!xLogoPromise) {

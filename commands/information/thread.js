@@ -2,7 +2,6 @@
 const { notice, usageCard } = require('../../utils/render/embeds');
 const { getDb } = require('../../models/core/db');
 const { buildXPostCard } = require('../../utils/render/cards');
-const { comma } = require('../../utils/format');
 const { AttachmentBuilder } = require('discord.js');
 
 const threads = () => getDb().collection('threadPosts');
@@ -41,6 +40,7 @@ module.exports = {
     const buffer = await buildXPostCard({ avatarURL, name, handle, text, likes, replies, reposts });
     const attachment = new AttachmentBuilder(buffer, { name: 'thread.png' });
 
+    if (message.interaction) return message.reply({ files: [attachment], allowedMentions: { parse: [] } });
     await message.channel.send({ files: [attachment], allowedMentions: { parse: [] } });
     if (message.deletable) message.delete().catch(() => {});
   },

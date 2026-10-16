@@ -3,133 +3,69 @@ const { ChannelType, PermissionFlagsBits, Collection } = require('discord.js');
 const { card, notice } = require('../utils/render/embeds');
 const { checkTarget } = require('../utils/access/permissions');
 const { lacksPermission } = require('../utils/access/gate');
-const { addBalance, getBalance } = require('../models/economy/economy');
-const { comma } = require('../utils/format');
+const { addBalance, spendBalance } = require('../models/economy/economy');
+const { comma, parseDuration } = require('../utils/format');
 const { EMOJI } = require('../utils/emojis');
 const { getGuildConfig, updateGuildConfig } = require('../models/core/moderation');
-const { limitReached, recordAction } = require('../models/enforcement/modTools');
 const giveaway = require('../models/economy/giveaway');
 const autoreply = require('../models/settings/autoreply');
 const verification = require('../models/enforcement/verification');
+const moderation = require('../services/moderation');
 const { buildTicketPanel, withCustom, MAX_CUSTOM } = require('./ticketPanel');
 
 const USER = 6, CHANNEL = 7, ROLE = 8, MENTIONABLE = 9, ATTACHMENT = 11;
 
 const missing = (message) => notice(message, '__This command is not set up yet__');
 
-const DURATION_UNITS = { s: 1000, m: 60000, h: 3600000, d: 86400000, w: 604800000 };
-const MAX_TIMEOUT_MS = 28 * 86400000;
-function parseDuration(text) {
-  const match = String(text || '').trim().toLowerCase().match(/^(\d+)\s*([smhdw])$/);
-  return match ? Number(match[1]) * DURATION_UNITS[match[2]] : null;
-}
-
 const need = (message, flag) => (message.member.permissions.has(flag) ? null : notice(message, "__You don't have permission__"));
 
 async function targetMember(message, target) {
-  const member = await message.guild.members.fetch(target.id).catch(() => null);
-  if (!member) return { error: notice(message, "__That member isn't in this server__") };
-  const check = checkTarget(message, member);
-  return check.ok ? { member } : { error: notice(message, `__${check.reason}__`) };
+  const { member, reason } = await moderation.targetMember(message, target);
+  return member ? { member } : { error: notice(message, `__${reason}__`) };
 }
 
+// The /mperm permission choices, mapped to their PermissionFlagsBits key.
 const PERMISSIONS = {
   send_messages: 'SendMessages', view_channel: 'ViewChannel', connect: 'Connect', speak: 'Speak', attach_files: 'AttachFiles',
   embed_links: 'EmbedLinks', add_reactions: 'AddReactions', external_emojis: 'UseExternalEmojis', manage_messages: 'ManageMessages',
   mention_everyone: 'MentionEveryone', stream: 'Stream', voice_activity: 'UseVAD', create_threads: 'CreatePublicThreads',
 };
-const STATES = { allow: true, deny: false, reset: null };
 
 const natives = {
   async ban(message, get) {
     const denied = need(message, PermissionFlagsBits.BanMembers);
     if (denied) return denied;
-    const target = get('member');
-    const here = await message.guild.members.fetch(target.id).catch(() => null);
-    if (here) {
-      const check = checkTarget(message, here);
-      if (!check.ok) return notice(message, `__${check.reason}__`);
-    }
-    const limit = await limitReached(message.guild.id, 'ban');
-    if (limit) return notice(message, limit);
-    const reason = get('reason');
-    const banned = await message.guild.members.ban(target.id, { reason, deleteMessageSeconds: (get('delete_days') || 0) * 86400 }).catch(() => null);
-    if (!banned) return notice(message, "__Couldn't ban that user (check my role position/permissions)__");
-    await recordAction(message.guild.id, 'ban');
-    return card(message, { title: 'Command', lines: [`__Banned__ **${target.username}**`, `__Reason__ : ${reason}`] });
+    return moderation.ban(message, get('member'), { reason: get('reason'), deleteDays: get('delete_days') || 0 });
   },
   async kick(message, get) {
     const denied = need(message, PermissionFlagsBits.KickMembers);
     if (denied) return denied;
-    const target = get('member');
-    const { member, error } = await targetMember(message, target);
-    if (error) return error;
-    const limit = await limitReached(message.guild.id, 'kick');
-    if (limit) return notice(message, limit);
-    const reason = get('reason');
-    const kicked = await member.kick(reason).then(() => true).catch(() => false);
-    if (!kicked) return notice(message, "__Couldn't kick that member (check my role position/permissions)__");
-    await recordAction(message.guild.id, 'kick');
-    return card(message, { title: 'Command', lines: [`__Kicked__ **${target.username}**`, `__Reason__ : ${reason}`] });
+    return moderation.kick(message, get('member'), get('reason'));
   },
   async unban(message, get) {
     const denied = need(message, PermissionFlagsBits.BanMembers);
     if (denied) return denied;
-    const target = get('user');
-    const done = await message.guild.members.unban(target.id, get('reason') || undefined).then(() => true).catch(() => false);
-    if (!done) return notice(message, '__That user is not banned__');
-    return card(message, { title: 'Command', lines: [`__Unbanned__ **${target.username}**`] });
+    return moderation.unban(message, get('user').id, get('reason'));
   },
   async timeout(message, get) {
     const denied = need(message, PermissionFlagsBits.ModerateMembers);
     if (denied) return denied;
-    const ms = parseDuration(get('duration'));
-    if (!ms || ms > MAX_TIMEOUT_MS) return notice(message, '__Give a duration like `10m`, `2h` or `1d` (28 days at most)__');
-    const target = get('member');
-    const { member, error } = await targetMember(message, target);
-    if (error) return error;
-    const limit = await limitReached(message.guild.id, 'timeout');
-    if (limit) return notice(message, limit);
-    const reason = get('reason');
-    const done = await member.timeout(ms, reason).then(() => true).catch(() => false);
-    if (!done) return notice(message, "__Couldn't timeout that member (check my role position/permissions)__");
-    await recordAction(message.guild.id, 'timeout');
-    return card(message, { title: 'Command', lines: [`__Timed out__ **${target.username}** __until__ <t:${Math.floor((Date.now() + ms) / 1000)}:R>`, `__Reason__ : ${reason}`] });
+    return moderation.timeout(message, get('member'), parseDuration(get('duration')), get('reason'));
   },
   async untimeout(message, get) {
     const denied = need(message, PermissionFlagsBits.ModerateMembers);
     if (denied) return denied;
-    const target = get('member');
-    const { member, error } = await targetMember(message, target);
-    if (error) return error;
-    if (!member.isCommunicationDisabled()) return notice(message, '__That member is not timed out__');
-    const done = await member.timeout(null).then(() => true).catch(() => false);
-    if (!done) return notice(message, "__Couldn't remove that timeout__");
-    return card(message, { title: 'Command', lines: [`__Removed the timeout of__ **${target.username}**`] });
+    return moderation.untimeout(message, get('member'));
   },
   async nickname(message, get) {
     const denied = need(message, PermissionFlagsBits.ManageNicknames);
     if (denied) return denied;
-    const target = get('member');
-    const { member, error } = await targetMember(message, target);
-    if (error && target.id !== message.author.id) return error;
-    const subject = member || message.member;
-    const nickname = get('nickname') || null;
-    const done = await subject.setNickname(nickname).then(() => true).catch(() => false);
-    if (!done) return notice(message, "__Couldn't change that nickname (check my role position/permissions)__");
-    return card(message, { title: 'Command', lines: [nickname ? `__Changed the nickname of__ **${target.username}** __to__ **${nickname}**` : `__Reset the nickname of__ **${target.username}**`] });
+    return moderation.nickname(message, get('member'), get('nickname'));
   },
   async mperm(message, get) {
     const denied = need(message, PermissionFlagsBits.ManageRoles);
     if (denied) return denied;
-    const target = get('target');
-    const where = message.channel;
-    const flag = PERMISSIONS[get('permission')];
-    const value = STATES[get('state')];
-    const done = await where.permissionOverwrites.edit(target.id, { [flag]: value }).then(() => true).catch(() => false);
-    if (!done) return notice(message, "__Couldn't change that permission (check my permissions in that channel)__");
-    const shown = { true: 'Allowed', false: 'Denied', null: 'Reset' }[String(value)];
-    return card(message, { title: 'Command', lines: [`__${shown}__ \`${get('permission')}\` __for__ ${target.toString()} __in__ ${where}`] });
+    return moderation.editPermission(message, { id: get('target').id, flag: PERMISSIONS[get('permission')], state: get('state') });
   },
   async suppress(message, get) {
     const denied = need(message, PermissionFlagsBits.MuteMembers);
@@ -178,8 +114,7 @@ const natives = {
     if (target.bot) return notice(message, "__You can't send RVP to a bot__");
     if (target.id === message.author.id) return notice(message, "__You can't send RVP to yourself__");
     if (amount < 1) return notice(message, '__The amount must be at least 1__');
-    if ((await getBalance(message.author.id)) < amount) return notice(message, "__You don't have enough RVP__");
-    await addBalance(message.author.id, -amount);
+    if ((await spendBalance(message.author.id, amount)) === null) return notice(message, "__You don't have enough RVP__");
     await addBalance(target.id, amount);
     return card(message, { title: 'RVP Transfer', lines: [`__Sent__ \`${comma(amount)}\` ${EMOJI.coin} __to__ **${target.username}**`] });
   },
@@ -239,7 +174,7 @@ const natives = {
   },
 
   async 'ticket-close'(message) {
-    const { closeTicket, parseTopic } = require('./ticketActions');
+    const { closeTicket, parseTopic } = require('./tickets/ticketActions');
     const info = parseTopic(message.channel && message.channel.topic);
     if (!info) return notice(message, '__This channel is not a ticket__');
     if (message.author.id !== info.userId && !message.member.permissions.has(PermissionFlagsBits.ManageChannels)) return notice(message, "__You don't have permission__");

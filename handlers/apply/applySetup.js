@@ -9,7 +9,7 @@ const { parseEmoji } = require('../tickets/ticketUI');
 const { OPEN_COLOR, CLOSE_COLOR } = require('../tickets/ticketActions');
 const { peek, start } = require('../../utils/runtime/cooldown');
 const { duration } = require('../../utils/format');
-const { POSITIONS, buildApplyPanel } = require('./applyUI');
+const { POSITIONS, buildApplyPanel, sendApplyPanel } = require('./applyUI');
 
 const EPHEMERAL = 1 << 6;
 const APPLY_BUTTON_ID = 'setup_staffapply_1398395532103254157';
@@ -132,7 +132,7 @@ async function handleApplySetupModalSubmit(interaction) {
   const style = interaction.fields.getStringSelectValues('apply_panel_style')[0];
   const uploadedImage = interaction.fields.getUploadedFiles('apply_panel_image', false)?.first();
 
-  const patch = { panelChannelId: panelChannel.id, reviewChannelId: reviewChannel.id, panelStyle: style };
+  const patch = { reviewChannelId: reviewChannel.id, panelStyle: style };
   let imageError = false;
   if (uploadedImage) {
     try {
@@ -146,10 +146,12 @@ async function handleApplySetupModalSubmit(interaction) {
 
   const config = await getGuildConfig(interaction.guild.id);
   const panelChannelLive = interaction.guild.channels.cache.get(panelChannel.id);
-  await disablePanelMessage(interaction.guild, previous.applyPanelChannelId, previous.applyPanelMessageId);
   const posted =
-    panelChannelLive && (await panelChannelLive.send(buildApplyPanel(interaction.guild, style, config.applyPanelImageURL)).catch(() => null));
-  if (posted) await patchApplyConfig(interaction.guild.id, { panelMessageId: posted.id });
+    panelChannelLive && (await sendApplyPanel(panelChannelLive, interaction.guild, style, config.applyPanelImageURL).catch(() => null));
+  if (posted) {
+    await disablePanelMessage(interaction.guild, previous.applyPanelChannelId, previous.applyPanelMessageId);
+    await patchApplyConfig(interaction.guild.id, { panelChannelId: panelChannel.id, panelMessageId: posted.id });
+  }
 
   const lines = [
     `__Panel Channel__ : ${panelChannel}`,

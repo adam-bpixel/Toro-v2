@@ -1,8 +1,8 @@
 'use strict';
 const path = require('path');
-const { loadImage } = require('@napi-rs/canvas');
+const { loadImage } = require('./canvas');
 
-const BADGES_DIR = path.join(__dirname, '..', 'data', 'badges');
+const BADGES_DIR = path.join(__dirname, '..', '..', 'data', 'badges');
 
 const TIERS = [
   { name: 'Grandmaster', from: 75, file: 'grandmaster.png' },

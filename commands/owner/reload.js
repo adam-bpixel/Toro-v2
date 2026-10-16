@@ -1,16 +1,8 @@
-const fs = require('node:fs');
 const path = require('node:path');
 const { card, notice } = require('../../utils/render/embeds');
 const { OWNER_EMOJI } = require('../../utils/emojis');
 const { isOwner } = require('../../models/economy/premium');
-
-const COMMANDS_DIR = path.join(__dirname, '..');
-
-const commandFiles = () => fs.readdirSync(COMMANDS_DIR, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .flatMap((dir) => fs.readdirSync(path.join(COMMANDS_DIR, dir.name))
-    .filter((file) => file.endsWith('.js'))
-    .map((file) => path.join(COMMANDS_DIR, dir.name, file)));
+const { commandFiles, addCommand } = require('../../utils/runtime/loader');
 
 module.exports = {
   name: 'reload',
@@ -35,9 +27,7 @@ module.exports = {
     for (const file of files) {
       try {
         delete require.cache[file];
-        const command = require(file);
-        client.commands.set(command.name, command);
-        for (const alias of command.aliases || []) client.aliases.set(alias, command.name);
+        addCommand(client, file);
         loaded += 1;
       } catch (error) {
         failed.push(`\`${path.basename(file)}\` : ${error.message}`);

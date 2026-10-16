@@ -32,13 +32,14 @@ module.exports = {
       return notice(message, '__Give an amount between 1 and 100__');
     }
 
-    const deleted = await message.channel.bulkDelete(amount + 1, true).catch(() => null);
+    const recent = await message.channel.messages.fetch({ limit: amount, before: message.id }).catch(() => null);
+    const deleted = recent && await message.channel.bulkDelete(recent, true).catch(() => null);
     if (!deleted) return notice(message, "__Couldn't delete those messages (too old, or missing permission)__");
+    await message.delete().catch(() => {});
 
-    const sent = await message.channel.send(payloadOf({
-      title: `${EMOJI.success} Success`,
-      lines: [`__Cleared ${Math.max(0, deleted.size - 1)} messages__`],
-    }));
-    setTimeout(() => sent.delete().catch(() => {}), 4000);
+    const result = payloadOf({ title: `${EMOJI.success} Success`, lines: [`__Cleared ${deleted.size} messages__`] });
+    if (message.interaction) return message.reply(result);
+    const sent = await message.channel.send(result).catch(() => null);
+    if (sent) setTimeout(() => sent.delete().catch(() => {}), 4000);
   },
 };

@@ -1,4 +1,4 @@
-const { getBalance, addBalance } = require('../../models/economy/economy');
+const { getBalance, addBalance, spendBalance } = require('../../models/economy/economy');
 const { card, notice, payloadOf } = require('../../utils/render/embeds');
 const { comma, parseAmount } = require('../../utils/format');
 const { hit } = require('../../utils/runtime/cooldown');
@@ -62,6 +62,9 @@ module.exports = {
 
     const cd = hit(`blackjack:${message.author.id}`, COOLDOWN_MS);
     if (cd.onCooldown) return notice(message, `__Slow down, try again in ${Math.ceil(cd.remainingMs / 1000)}s__`);
+    // The bet is held up front so the same balance can't back several games at once.
+    if ((await spendBalance(message.author.id, amount)) === null) return notice(message, `__You don't have \`${comma(amount)}\` ${EMOJI.coin}__`);
+    let settled = false;
 
     const player = [draw(), draw()];
     const dealer = [draw(), draw()];
@@ -85,7 +88,9 @@ module.exports = {
         delta = -amount;
         resultLine = `__Dealer wins__ \`-${comma(amount)}\` ${EMOJI.coin} ${FAIL}`;
       }
-      const newBalance = delta === 0 ? balance : await addBalance(message.author.id, delta);
+      const payout = settled ? 0 : amount + delta;
+      settled = true;
+      const newBalance = payout > 0 ? await addBalance(message.author.id, payout) : await getBalance(message.author.id);
       return {
         title: 'Blackjack',
         lines: [
@@ -106,13 +111,16 @@ module.exports = {
       title: 'Blackjack',
       lines: [
         `__You__ : ${formatHand(player)} (\`${handValue(player)}\`)`,
-        `__Dealer__ : ${formatHand(hidden ? [dealer[0]] : dealer)}${hidden ? ' \`??\`' : ` (\`${handValue(dealer)}\`)`}`,
+        `__Dealer__ : ${formatHand(hidden ? [dealer[0]] : dealer)}${hidden ? ' `??`' :` (\`${handValue(dealer)}\`)`}`,
         `__Bet__ : \`${comma(amount)}\` ${EMOJI.coin}`,
       ],
       extraRows: [buttonsRow()],
     });
 
-    const sent = await card(message, inProgress());
+    const sent = await card(message, inProgress()).catch(async (error) => {
+      await addBalance(message.author.id, amount);
+      throw error;
+    });
     activeComponents.claim(sent.id);
 
     const collector = sent.createMessageComponentCollector({

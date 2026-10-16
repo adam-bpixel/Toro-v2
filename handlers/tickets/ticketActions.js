@@ -1,8 +1,8 @@
 'use strict';
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const { getGuildConfig, nextTicketNumber } = require('../../models/core/moderation');
-const { payloadOf, ACCENT_COLOR, COMPONENTS_V2 } = require('../../utils/render/embeds');
-const { EMOJI, TICKET_LOG_EMOJI: LOG_EMOJI } = require('../../utils/emojis');
+const { payloadOf, COMPONENTS_V2 } = require('../../utils/render/embeds');
+const { TICKET_LOG_EMOJI: LOG_EMOJI } = require('../../utils/emojis');
 const { withCustom, buildTicketOpenPanel } = require('./ticketUI');
 const { localize } = require('../../utils/localize');
 const { peek, start } = require('../../utils/runtime/cooldown');

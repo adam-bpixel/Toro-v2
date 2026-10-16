@@ -77,10 +77,7 @@ async function buyProfile(userId, profileId) {
   if (!profile || profile.name === null) return { ok: false, notice: '__That background is no longer in the shop__' };
   if (await ownsProfile(userId, profileId)) return { ok: false, notice: '__You already own that background__' };
 
-  const balance = await economy.getBalance(userId);
-  if (balance < profile.price) return { ok: false, notice: "__You don't have enough RVP for that__" };
-
-  await economy.addBalance(userId, -profile.price);
+  if ((await economy.spendBalance(userId, profile.price)) === null) return { ok: false, notice: "__You don't have enough RVP for that__" };
   if (!(await takeStock(profileId))) {
     await economy.addBalance(userId, profile.price);
     return { ok: false, notice: '__That background just sold out__' };

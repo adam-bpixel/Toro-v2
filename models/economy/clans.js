@@ -511,7 +511,7 @@ async function applyClanTag(guild, clan, userId) {
 const clearClanTag = (guild, userId) => applyClanTag(guild, { tag: null }, userId);
 
 async function setClanTag(guild, clan, tag, position = 'prefix') {
-  if (tag !== null && !/^[^\[\]\s]{1,10}$/.test(tag)) return `The tag must be 1-${TAG_MAX} characters, without spaces or brackets`;
+  if (tag !== null && !/^[^[\]\s]{1,10}$/.test(tag)) return `The tag must be 1-${TAG_MAX} characters, without spaces or brackets`;
   const update = { tag, tagPosition: position };
   await clans().updateOne({ guildId: guild.id, clanId: clan.clanId }, { $set: update });
   let failed = 0;

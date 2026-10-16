@@ -28,14 +28,15 @@ async function run(action, member, extra = {}) {
   const busy = cooldown.hit(`voice:${member.guild.id}:${member.id}`, ACTION_COOLDOWN_MS);
   if (busy.onCooldown) return { error: `Please wait ${wait(busy.remainingMs)} before using another voice command` };
 
+  if (!Object.hasOwn(actions, action)) return { error: 'Unknown voice action' };
+  if (!OPEN_TO_ALL.has(action) && (!owner || owner.id !== member.id)) {
+    return { error: owner ? `Only the channel owner (${owner.displayName}) can do that` : 'This channel has no owner, use `claim`' };
+  }
+
   if (action === 'name') {
     const renamed = cooldown.peek(`voice-rename:${room.id}`, RENAME_COOLDOWN_MS);
     if (renamed.onCooldown) return { error: `You can rename this channel again in ${wait(renamed.remainingMs)}` };
     cooldown.start(`voice-rename:${room.id}`);
-  }
-
-  if (!OPEN_TO_ALL.has(action) && (!owner || owner.id !== member.id)) {
-    return { error: owner ? `Only the channel owner (${owner.displayName}) can do that` : 'This channel has no owner, use `claim`' };
   }
 
   try {

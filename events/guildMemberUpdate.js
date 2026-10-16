@@ -7,7 +7,8 @@ module.exports = {
   name: Events.GuildMemberUpdate,
   once: false,
   async execute(oldMember, newMember) {
-    if (!oldMember.premiumSince && newMember.premiumSince) {
+    // A partial oldMember (evicted from cache) always lacks premiumSince, which would fake a new boost.
+    if (!oldMember.partial && !oldMember.premiumSince && newMember.premiumSince) {
       sendBoostNotification(newMember).catch((error) => console.error(`Boost notification failed for ${newMember.id}:`, error.message));
     }
     if (oldMember.roles.cache.size === newMember.roles.cache.size && oldMember.roles.cache.every((_, id) => newMember.roles.cache.has(id))) return;

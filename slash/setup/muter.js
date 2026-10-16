@@ -10,6 +10,7 @@ const ROWS = [
 module.exports = {
   name: "muter",
   data: buildData("muter", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

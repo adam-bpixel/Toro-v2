@@ -3,7 +3,7 @@ const { getGuildConfig, patchTicketConfig, patchApplyConfig } = require('../../m
 const { card, notice, usageCard } = require('../../utils/render/embeds');
 const { disablePanelMessage } = require('../../utils/runtime/panels');
 const { buildTicketPanel } = require('../../handlers/ticketPanel');
-const { buildApplyPanel } = require('../../handlers/apply/applySetup');
+const { sendApplyPanel } = require('../../handlers/apply/applyUI');
 const roleRequest = require('../../handlers/roles/roleRequest');
 
 const TEXT_CHANNELS = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
@@ -27,7 +27,7 @@ const TYPES = {
     aliases: ['staffapply'],
     async send(guild, channel, config) {
       if (!config.applyReviewChannelId) return 'Staff Apply is not configured yet - use `&setup` -> Staff Apply first';
-      const sent = await channel.send(buildApplyPanel(guild, config.applyPanelStyle || 'button', config.applyPanelImageURL)).catch(() => null);
+      const sent = await sendApplyPanel(channel, guild, config.applyPanelStyle || 'button', config.applyPanelImageURL).catch(() => null);
       if (!sent) return SEND_FAILED;
       await disablePanelMessage(guild, config.applyPanelChannelId, config.applyPanelMessageId);
       await patchApplyConfig(guild.id, { panelChannelId: channel.id, panelMessageId: sent.id });

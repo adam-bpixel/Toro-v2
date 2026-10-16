@@ -1,4 +1,5 @@
 'use strict';
+const { PermissionFlagsBits } = require('discord.js');
 const { COMPONENTS_V2 } = require('../../utils/render/embeds');
 const { SUGGEST_EMOJI: E } = require('../../utils/emojis');
 const { getSuggestConfig } = require('../../models/core/moderation');
@@ -173,6 +174,9 @@ async function submitSuggestion(interaction) {
 const deciding = new Set();
 
 async function decide(interaction) {
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
+    return interaction.reply(notice('__You need the Manage Messages permission to review suggestions__'));
+  }
   const [, action, userId] = interaction.customId.split('_');
   if (!userId) return interaction.reply(notice('__This suggestion is not valid__'));
   const accepted = action === 'accept';

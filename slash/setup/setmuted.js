@@ -9,6 +9,7 @@ const ROWS = [
 module.exports = {
   name: "setmuted",
   data: buildData("setmuted", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

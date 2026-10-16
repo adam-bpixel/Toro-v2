@@ -4,7 +4,7 @@ const { getGuildConfig } = require('../../models/core/moderation');
 const COOLDOWN_MS = 10 * 60 * 1000;
 const state = new Map();
 
-const countOf = (guild, kind) => (kind === 'members' ? guild.memberCount : guild.voiceStates.cache.size);
+const countOf = (guild, kind) => (kind === 'members' ? guild.memberCount : guild.voiceStates.cache.filter((s) => s.channelId).size);
 
 async function renameNow(guild, kind) {
   const config = await getGuildConfig(guild.id);

@@ -10,6 +10,7 @@ const ROWS = [
 module.exports = {
   name: "clanmanager",
   data: buildData("clanmanager", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

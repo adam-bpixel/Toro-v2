@@ -43,7 +43,8 @@ module.exports = {
     if (cd.onCooldown) return notice(message, `__Slow down, try again in ${Math.ceil(cd.remainingMs / 1000)}s__`);
 
     const reason = args.slice(1).join(' ') || 'No reason provided';
-    await member.roles.add(jailRole, reason);
+    const added = await member.roles.add(jailRole, reason).then(() => true, () => false);
+    if (!added) return notice(message, "__Couldn't give the jail role (check my role position/permissions)__");
     await logJailAction(message.guild.id, member.id, 'jail', reason, message.author.id);
     const logChannel = config.jailLogChannelId && message.guild.channels.cache.get(config.jailLogChannelId);
     if (logChannel?.isTextBased()) {

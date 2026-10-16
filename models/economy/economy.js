@@ -79,6 +79,18 @@ async function addBalance(userId, delta) {
   return (result.value || result).balance;
 }
 
+async function spendBalance(userId, amount) {
+  await getUser(userId);
+  const result = await users().findOneAndUpdate(
+    { userId, balance: { $gte: amount } },
+    { $inc: { balance: -amount }, $set: { updatedAt: new Date() } },
+    { returnDocument: 'after' },
+  );
+  invalidateUser(userId);
+  const doc = result && 'value' in result ? result.value : result;
+  return doc ? doc.balance : null;
+}
+
 async function getBalance(userId) {
   const user = await getUser(userId);
   return user.balance;
@@ -95,11 +107,12 @@ async function claimDaily(userId) {
   const keptStreak = last && elapsed <= DAILY_STREAK_GRACE_MS ? user.dailyStreak : 0;
   const streak = Math.min(keptStreak + 1, DAILY_STREAK_CAP);
   const amount = DAILY_BASE_REWARD + streak * DAILY_STREAK_BONUS;
-  await users().updateOne(
-    { userId },
+  const claimed = await users().updateOne(
+    { userId, lastDaily: user.lastDaily ?? null },
     { $inc: { balance: amount }, $set: { dailyStreak: streak, lastDaily: new Date(now), updatedAt: new Date(now) } },
   );
   invalidateUser(userId);
+  if (claimed.modifiedCount !== 1) return claimDaily(userId);
   const balance = await getBalance(userId);
   return { ok: true, amount, streak, balance };
 }
@@ -198,6 +211,7 @@ function dailyXpOf(user) {
 module.exports = {
   getUser,
   addBalance,
+  spendBalance,
   getBalance,
   claimDaily,
   grantMessageXp,

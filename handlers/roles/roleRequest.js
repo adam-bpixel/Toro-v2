@@ -520,6 +520,7 @@ async function handleAccept(interaction, userId, roleId) {
 }
 
 async function handleDenyModal(interaction, userId, roleId) {
+  if (!canReview(interaction.member)) return interaction.reply(notice("__You don't have permission to review role requests__"));
   const reason = interaction.fields.getTextInputValue('deny_reason').trim();
   const { guild } = interaction;
   pendingRequests.delete(`${userId}:${roleId}`);

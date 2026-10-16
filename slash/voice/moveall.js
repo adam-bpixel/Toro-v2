@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "moveall",
   data: buildData("moveall", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

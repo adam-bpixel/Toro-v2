@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "unmute",
   data: buildData("unmute", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

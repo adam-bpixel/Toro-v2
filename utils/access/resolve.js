@@ -1,14 +1,13 @@
 'use strict';
 async function resolveUser(message, args, { fallbackToAuthor = true } = {}) {
-  const mentioned = message.mentions.users.first();
-  if (mentioned) return mentioned;
-
   const query = args[0];
-  if (!query) return fallbackToAuthor ? message.author : null;
+  if (!query) return message.mentions.users.first() || (fallbackToAuthor ? message.author : null);
 
-  if (/^\d{15,25}$/.test(query)) {
-    const byId = await message.client.users.fetch(query).catch(() => null);
+  const id = (query.match(/^<@!?(\d{15,25})>$/) || [])[1] || (/^\d{15,25}$/.test(query) ? query : null);
+  if (id) {
+    const byId = message.mentions.users.get(id) || await message.client.users.fetch(id).catch(() => null);
     if (byId) return byId;
+    return fallbackToAuthor ? message.author : null;
   }
 
   if (message.guild) {

@@ -10,6 +10,7 @@ const ROWS = [
 module.exports = {
   name: "ticket-category",
   data: buildData("ticket-category", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

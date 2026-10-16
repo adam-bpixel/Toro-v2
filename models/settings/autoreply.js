@@ -17,6 +17,7 @@ async function list(guildId) {
 
 async function add(guildId, trigger, response) {
   const key = clean(trigger);
+  if (!key) return { error: 'The trigger cannot be empty' };
   if ((await list(guildId)).length >= MAX_PER_GUILD) return { error: `A server can have at most ${MAX_PER_GUILD} auto replies` };
   await replies().updateOne({ guildId, trigger: key }, { $set: { response, createdAt: new Date() }, $setOnInsert: { guildId, trigger: key } }, { upsert: true });
   cache.delete(guildId);

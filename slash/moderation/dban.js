@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "dban",
   data: buildData("dban", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

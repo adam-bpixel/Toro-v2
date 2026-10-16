@@ -1,8 +1,7 @@
 require('dotenv').config();
-const fs = require('node:fs');
-const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, Options, Partials } = require('discord.js');
 const db = require('./models/core/db');
+const loader = require('./utils/runtime/loader');
 const { registerInviteTracker } = require('./handlers/security/inviteTracker');
 const { registerLogs } = require('./handlers/security/logs');
 const { registerProtection } = require('./handlers/security/protection');
@@ -32,6 +31,7 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Channel, Partials.Message, Partials.GuildMember, Partials.ThreadMember],
+  allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
   rest: { timeout: 30_000 },
   makeCache: Options.cacheWithLimits({
     ...Options.DefaultMakeCacheSettings,
@@ -72,38 +72,12 @@ registerTempVoice(client);
 registerSnipe(client);
 client.commands = new Collection();
 client.aliases = new Collection();
-
-const commandsDir = path.join(__dirname, 'commands');
-for (const category of fs.readdirSync(commandsDir, { withFileTypes: true })) {
-  if (!category.isDirectory()) continue;
-  const categoryDir = path.join(commandsDir, category.name);
-  for (const file of fs.readdirSync(categoryDir).filter((f) => f.endsWith('.js'))) {
-    const command = require(path.join(categoryDir, file));
-    if (typeof command.name !== 'string' || typeof command.execute !== 'function') continue;
-    client.commands.set(command.name, command);
-    for (const alias of command.aliases || []) client.aliases.set(alias, command.name);
-  }
-}
-
-client.slashCommands = new Collection();
-const slashDir = path.join(__dirname, 'slash');
-for (const category of fs.readdirSync(slashDir, { withFileTypes: true })) {
-  if (!category.isDirectory()) continue;
-  const categoryDir = path.join(slashDir, category.name);
-  for (const file of fs.readdirSync(categoryDir).filter((f) => f.endsWith('.js'))) {
-    const slash = require(path.join(categoryDir, file));
-    client.slashCommands.set(slash.name, slash);
-  }
-}
+loader.loadCommands(client);
+client.slashCommands = new Collection(loader.loadSlashCommands());
 
 installTheme();
 
-const eventsDir = path.join(__dirname, 'events');
-for (const file of fs.readdirSync(eventsDir).filter((f) => f.endsWith('.js'))) {
-  const event = require(path.join(eventsDir, file));
-  if (event.once) client.once(event.name, (...args) => event.execute(...args, client));
-  else client.on(event.name, (...args) => event.execute(...args, client));
-}
+loader.loadEvents(client);
 
 module.exports = { client };
 

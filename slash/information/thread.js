@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "thread",
   data: buildData("thread", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

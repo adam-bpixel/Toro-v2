@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "setup-verification",
   data: buildData("setup-verification", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

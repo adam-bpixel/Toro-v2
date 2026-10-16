@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const { resolveUser } = require('../../utils/access/resolve');
-const { checkTarget } = require('../../utils/access/permissions');
-const { card, notice, usageCard } = require('../../utils/render/embeds');
+const { notice, usageCard } = require('../../utils/render/embeds');
+const moderation = require('../../services/moderation');
 
 module.exports = {
   name: 'untimeout',
@@ -22,14 +22,6 @@ module.exports = {
 
     const target = await resolveUser(message, args, { fallbackToAuthor: false });
     if (!target) return notice(message, "__Couldn't find that user__");
-    const member = await message.guild.members.fetch(target.id).catch(() => null);
-    if (!member) return notice(message, "__That user isn't in this server__");
-    const targetCheck = checkTarget(message, member);
-    if (!targetCheck.ok) return notice(message, `__${targetCheck.reason}__`);
-    if (!member.isCommunicationDisabled()) return notice(message, '__That member is not timed out__');
-
-    const done = await member.timeout(null).then(() => true).catch(() => false);
-    if (!done) return notice(message, "__Couldn't remove that timeout__");
-    await card(message, { title: 'Command', lines: [`__Removed the timeout of__ **${target.username}**`] });
+    return moderation.untimeout(message, target);
   },
 };

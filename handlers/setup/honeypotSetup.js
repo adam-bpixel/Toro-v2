@@ -178,8 +178,8 @@ async function checkHoneypot(message) {
   const banned = await message.guild.members.ban(member.id, { reason: 'Honeypot trap triggered', deleteMessageSeconds: 7 * 86400 }).catch(() => null);
   if (banned) await message.guild.members.unban(member.id, 'Honeypot trap').catch(() => {});
 
-  const caught = (settings.caught || 0) + 1;
-  await updateGuildConfig(message.guild.id, { $set: { 'honeypot.caught': caught } });
+  await updateGuildConfig(message.guild.id, { $inc: { 'honeypot.caught': 1 } });
+  const caught = ((await getGuildConfig(message.guild.id)).honeypot || {}).caught || 1;
   if (settings.messageId) {
     const trapMessage = await message.channel.messages.fetch(settings.messageId).catch(() => null);
     if (trapMessage) await trapMessage.edit(buildTrapMessage(caught)).catch(() => {});

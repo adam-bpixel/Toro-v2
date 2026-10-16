@@ -1,7 +1,7 @@
 'use strict';
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, MessageFlags } = require('discord.js');
 const { EMOJI } = require('../../utils/emojis');
-const { container, COMPONENTS_V2, MessageFlags } = require('../../utils/render/embeds');
+const { container, COMPONENTS_V2 } = require('../../utils/render/embeds');
 
 const DANGEROUS_PERMISSIONS = [
   'Administrator', 'ManageGuild', 'ManageRoles', 'ManageChannels', 'ManageWebhooks', 'ManageGuildExpressions',

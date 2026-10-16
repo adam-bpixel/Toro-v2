@@ -11,14 +11,14 @@ const POSITIONS = [
   { id: 'apply_partnership', label: 'Partnership', emoji: APPLY_EMOJI.partnership, desc: 'Build server relationships' },
 ];
 
-function buttonRows() {
-  const buttons = POSITIONS.map((p) => ({ type: 2, style: 2, custom_id: p.id, label: p.label, emoji: parseEmoji(p.emoji) }));
+function buttonRows(withEmoji = true) {
+  const buttons = POSITIONS.map((p) => ({ type: 2, style: 2, custom_id: p.id, label: p.label, ...(withEmoji && { emoji: parseEmoji(p.emoji) }) }));
   const rows = [];
   for (let i = 0; i < buttons.length; i += 3) rows.push({ type: 1, components: buttons.slice(i, i + 3) });
   return rows;
 }
 
-function selectRow() {
+function selectRow(withEmoji = true) {
   return {
     type: 1,
     components: [
@@ -28,13 +28,13 @@ function selectRow() {
         placeholder: 'Select a position to apply for',
         min_values: 1,
         max_values: 1,
-        options: POSITIONS.map((p) => ({ label: p.label, value: p.id, emoji: parseEmoji(p.emoji) })),
+        options: POSITIONS.map((p) => ({ label: p.label, value: p.id, ...(withEmoji && { emoji: parseEmoji(p.emoji) }) })),
       },
     ],
   };
 }
 
-function buildApplyPanel(guild, style, imageURL) {
+function buildApplyPanel(guild, style, imageURL, withEmoji = true) {
   const parts = [
     { type: 10, content: `## ${guild.name} • Staff Applications` },
     { type: 14, spacing: 1, divider: true },
@@ -64,12 +64,23 @@ function buildApplyPanel(guild, style, imageURL) {
       { type: 12, items: [{ media: { url: imageURL }, description: 'Application panel image', spoiler: false }] },
     );
   }
-  parts.push({ type: 14, spacing: 1, divider: true }, ...(style === 'menu' ? [selectRow()] : buttonRows()));
+  parts.push({ type: 14, spacing: 1, divider: true }, ...(style === 'menu' ? [selectRow(withEmoji)] : buttonRows(withEmoji)));
   return { flags: COMPONENTS_V2, components: [{ type: 17, accent_color: ACCENT_COLOR, components: parts, spoiler: false }] };
+}
+
+// Emoji IDs only work for the application that owns them; retry without them if Discord rejects the panel.
+async function sendApplyPanel(channel, guild, style, imageURL) {
+  try {
+    return await channel.send(buildApplyPanel(guild, style, imageURL));
+  } catch (error) {
+    if (error?.code !== 50035) throw error;
+    return channel.send(buildApplyPanel(guild, style, imageURL, false));
+  }
 }
 
 module.exports = {
   POSITIONS,
+  sendApplyPanel,
   buttonRows,
   selectRow,
   buildApplyPanel,

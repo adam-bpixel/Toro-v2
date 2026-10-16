@@ -20,7 +20,7 @@ async function loadAzkarList() {
   try {
     const res = await fetch(AZKAR_API_URL);
     if (!res.ok) throw new Error(`status ${res.status}`);
-    const data = JSON.parse((await res.text()).replace(/^﻿/, ''));
+    const data = JSON.parse((await res.text()).replace(/^\uFEFF/, ''));
     const texts = Object.values(data)[0].map((item) => item.ARABIC_TEXT).filter(Boolean);
     if (texts.length) azkarList = texts;
   } catch (error) {

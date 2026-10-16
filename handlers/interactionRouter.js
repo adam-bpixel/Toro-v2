@@ -1,57 +1,53 @@
 'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
 const { MessageFlags } = require('discord.js');
 const { handleComponent, touchIdle } = require('../utils/runtime/replay');
 const activeComponents = require('../utils/runtime/activeComponents');
-const tickets = require('./tickets');
-const voice = require('./voice');
 const claimroles = require('./claimroles');
-const apply = require('./apply');
-const roles = require('./roles');
 const security = require('./security');
-const setup = require('./setup');
 const workmode = require('../models/core/workmode');
 const blacklist = require('../models/core/blacklist');
 const { isOwner } = require('../models/economy/premium');
 
-const exactHandlers = new Map([
-  [tickets.SETUP_BUTTON_ID, (i) => tickets.openTicketConfigPanel(i)],
-  [tickets.SETUP_MODAL_ID, (i) => tickets.handleTicketSetupModalSubmit(i)],
-  [apply.APPLY_BUTTON_ID, (i) => apply.openApplyConfigPanel(i)],
-  [apply.APPLY_MODAL_ID, (i) => apply.handleApplySetupModalSubmit(i)],
-]);
+// Every handlers/<feature>/index.js may export `routes: [{ name, match, handle }]`. They are
+// collected here, so a new panel only has to declare its route next to its own code.
+function loadRoutes() {
+  const routes = [];
+  const names = new Set();
+  for (const entry of fs.readdirSync(__dirname, { withFileTypes: true })) {
+    const index = path.join(__dirname, entry.name, 'index.js');
+    if (!entry.isDirectory() || !fs.existsSync(index)) continue;
+    for (const route of require(index).routes || []) {
+      if (typeof route.match !== 'function' || typeof route.handle !== 'function') {
+        throw new Error(`Route "${route.name}" in handlers/${entry.name} needs a match and a handle function`);
+      }
+      if (names.has(route.name)) throw new Error(`Two interaction routes are named "${route.name}"`);
+      names.add(route.name);
+      routes.push(route);
+    }
+  }
+  return routes;
+}
 
-const featureCheckers = [
-  { match: (i) => i.isModalSubmit() && i.customId.startsWith(apply.APPLY_FORM_PREFIX), handle: (i) => apply.handleApplicationSubmit(i) },
-  { match: (i) => i.isButton() && apply.isApplyDecision(i.customId), handle: (i) => apply.handleApplyDecision(i) },
-  { match: (i) => (i.isButton() || i.isStringSelectMenu()) && apply.isApplyComponent(i.customId), handle: (i) => apply.handleApplyInteraction(i) },
-  { match: (i) => (i.isButton() || i.isStringSelectMenu()) && (i.customId.startsWith('ticket_') || i.customId === 'close_ticket'), handle: (i) => tickets.handleTicketInteraction(i) },
-  { match: claimroles.isClaimrolesInteraction, handle: (i) => claimroles.handleClaimrolesInteraction(i) },
-  { match: setup.isClanManagerSetupInteraction, handle: (i) => setup.handleClanManagerSetupInteraction(i) },
-  { match: setup.isNoPrefixSetupInteraction, handle: (i) => setup.handleNoPrefixSetupInteraction(i) },
-  { match: setup.isAutoreplyInteraction, handle: (i) => setup.handleAutoreplyInteraction(i) },
-  { match: roles.isAutoroleInteraction, handle: (i) => roles.handleAutoroleInteraction(i) },
-  { match: roles.isAutotagInteraction, handle: (i) => roles.handleAutotagInteraction(i) },
-  { match: setup.isAliasesSetupInteraction, handle: (i) => setup.handleAliasesSetupInteraction(i) },
-  { match: roles.isRolesSetupInteraction, handle: (i) => roles.handleRolesSetupInteraction(i) },
-  { match: voice.isTempVoiceSetupInteraction, handle: (i) => voice.handleTempVoiceSetupInteraction(i) },
-  { match: security.isLogsSetupInteraction, handle: (i, client) => security.handleLogsSetupInteraction(i, client.commands) },
-  { match: roles.isLevelRolesInteraction, handle: (i) => roles.handleLevelRolesInteraction(i) },
-  { match: roles.isRoleGroupsInteraction, handle: (i) => roles.handleRoleGroupsInteraction(i) },
-  { match: setup.isClearSetupInteraction, handle: (i) => setup.handleClearSetupInteraction(i) },
-  { match: setup.isCounterSetupInteraction, handle: (i) => setup.handleCounterSetupInteraction(i) },
-  { match: setup.isPrefixSetupInteraction, handle: (i) => setup.handlePrefixSetupInteraction(i) },
-  { match: setup.isCommandManageInteraction, handle: (i) => setup.handleCommandManageInteraction(i) },
-  { match: setup.isSubscriptionSetupInteraction, handle: (i) => setup.handleSubscriptionSetupInteraction(i) },
-  { match: setup.isThemeSetupInteraction, handle: (i) => setup.handleThemeSetupInteraction(i) },
-  { match: setup.isAzkarSetupInteraction, handle: (i) => setup.handleAzkarSetupInteraction(i) },
-  { match: setup.isWelcomerSetupInteraction, handle: (i) => setup.handleWelcomerSetupInteraction(i) },
-  { match: setup.isBoostSetupInteraction, handle: (i) => setup.handleBoostSetupInteraction(i) },
-  { match: setup.isHoneypotSetupInteraction, handle: (i) => setup.handleHoneypotSetupInteraction(i) },
-  { match: roles.isRoleRequestInteraction, handle: (i) => roles.handleRoleRequestInteraction(i) },
-  { match: setup.isSupportInteraction, handle: (i) => setup.handleSupportInteraction(i) },
-  { match: setup.isSuggestInteraction, handle: (i) => setup.handleSuggestInteraction(i) },
-  { match: voice.isVoiceMasterInteraction, handle: (i) => voice.handleVoiceMasterInteraction(i) },
-];
+const routes = loadRoutes();
+const warnedOverlaps = new Set();
+
+// Returns the route for this interaction. If more than one claims it, that is a bug (two
+// features sharing a customId): the first still runs, but it is logged once per customId.
+function findRoute(interaction) {
+  const matched = routes.filter((route) => route.match(interaction));
+  if (matched.length > 1 && !warnedOverlaps.has(interaction.customId)) {
+    warnedOverlaps.add(interaction.customId);
+    console.warn(`customId "${interaction.customId}" matches several routes (${matched.map((r) => r.name).join(', ')}); only "${matched[0].name}" runs`);
+  }
+  return matched[0];
+}
+
+async function replyFailed(interaction, content) {
+  const failed = { content, flags: MessageFlags.Ephemeral };
+  await (interaction.replied || interaction.deferred ? interaction.followUp(failed) : interaction.reply(failed)).catch(() => {});
+}
 
 async function handleChatInput(interaction, client) {
   if (blacklist.isBlacklisted(interaction.user.id) && !isOwner(interaction.user.id)) return;
@@ -65,8 +61,7 @@ async function handleChatInput(interaction, client) {
     }
   } catch (error) {
     console.error(`Slash command "${interaction.commandName}" failed:`, error);
-    const failed = { content: '__Something went wrong running that command__', flags: MessageFlags.Ephemeral };
-    await (interaction.replied || interaction.deferred ? interaction.followUp(failed) : interaction.reply(failed)).catch(() => {});
+    await replyFailed(interaction, '__Something went wrong running that command__');
   }
 }
 
@@ -79,33 +74,20 @@ async function handleInteraction(interaction, client) {
 
   touchIdle(interaction);
 
-  if (interaction.customId && exactHandlers.has(interaction.customId)) {
+  const route = interaction.customId ? findRoute(interaction) : null;
+  if (route) {
     try {
-      await exactHandlers.get(interaction.customId)(interaction, client);
-      return;
+      await route.handle(interaction, client);
     } catch (error) {
-      console.error(`Exact interaction "${interaction.customId}" failed:`, error);
-      const failed = { content: '__Something went wrong__', flags: MessageFlags.Ephemeral };
-      await (interaction.replied || interaction.deferred ? interaction.followUp(failed) : interaction.reply(failed)).catch(() => {});
-      return;
+      console.error(`Interaction route "${route.name}" failed on "${interaction.customId}":`, error);
+      await replyFailed(interaction, '__Something went wrong__');
     }
-  }
-
-  for (const checker of featureCheckers) {
-    if (checker.match(interaction)) {
-      try {
-        await checker.handle(interaction, client);
-      } catch (error) {
-        console.error('Interaction execution error:', error);
-        const failed = { content: '__Something went wrong__', flags: MessageFlags.Ephemeral };
-        await (interaction.replied || interaction.deferred ? interaction.followUp(failed) : interaction.reply(failed)).catch(() => {});
-      }
-      return;
-    }
+    return;
   }
 
   if (!interaction.isMessageComponent()) return;
   if (activeComponents.has(interaction.message?.id)) return;
+  if (interaction.customId === 'giveaway_enter') return;
 
   try {
     await handleComponent(interaction, client.commands);
@@ -114,4 +96,4 @@ async function handleInteraction(interaction, client) {
   }
 }
 
-module.exports = { handleInteraction };
+module.exports = { handleInteraction, routes };

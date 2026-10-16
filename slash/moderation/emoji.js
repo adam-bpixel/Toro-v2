@@ -9,6 +9,7 @@ const ROWS = [
 module.exports = {
   name: "emoji",
   data: buildData("emoji", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },

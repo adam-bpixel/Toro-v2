@@ -25,9 +25,9 @@ function parseAmount(input, balance = Infinity) {
 }
 
 function parseDuration(input) {
-  const match = String(input || '').trim().match(/^(\d+)(s|m|h|d)$/i);
+  const match = String(input || '').trim().match(/^(\d+)\s*(s|m|h|d|w)$/i);
   if (!match) return null;
-  const scale = { s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2].toLowerCase()];
+  const scale = { s: 1000, m: 60000, h: 3600000, d: 86400000, w: 604800000 }[match[2].toLowerCase()];
   return Number(match[1]) * scale;
 }
 

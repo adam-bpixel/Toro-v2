@@ -1,17 +1,8 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
 const { REST, Routes } = require('discord.js');
+const { loadSlashCommands } = require('./utils/runtime/loader');
 
-const slashDir = path.join(__dirname, 'slash');
-const commands = [];
-for (const category of fs.readdirSync(slashDir, { withFileTypes: true })) {
-  if (!category.isDirectory()) continue;
-  const categoryDir = path.join(slashDir, category.name);
-  for (const file of fs.readdirSync(categoryDir).filter((f) => f.endsWith('.js'))) {
-    commands.push(require(path.join(categoryDir, file)).data);
-  }
-}
+const commands = [...loadSlashCommands().values()].map((slash) => slash.data);
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 

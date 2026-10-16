@@ -47,6 +47,32 @@
 6. Invite the bot with the `bot` scope and permissions to send messages, embed links, attach files, add reactions, read message history, and manage roles.
 7. `npm start`
 
+## 🧩 Adding to the bot
+
+| Adding | Where | Picked up by |
+| --- | --- | --- |
+| Prefix command | `commands/<category>/<name>.js` exporting `name` + `execute` | `utils/runtime/loader.js` |
+| Slash command | `slash/<category>/<name>.js` with a `ROWS` table, then `npm run deploy` | `utils/runtime/loader.js` |
+| Event listener | `events/<name>.js` exporting `name` + `execute` | `utils/runtime/loader.js` |
+| Button / modal / select panel | its file in `handlers/<feature>/`, plus one entry in that folder's `index.js` `routes` | `handlers/interactionRouter.js` |
+| Logic shared by `&cmd` and `/cmd` | `services/<area>.js`; both commands call it | — |
+
+Rules that keep new code from breaking old code:
+
+- **Write the logic once.** If a prefix and a slash command do the same thing, the work lives in `services/`, and both just parse their input and call it (see `services/moderation.js`).
+- **Give every customId its own prefix.** The tests fail if two routes claim the same ID.
+- **Don't spread modules into a barrel** (`{ ...a, ...b }`). Use `mergeExports` from `utils/runtime/mergeExports.js`, which refuses clashing names.
+- **Build panels from a table, don't paste recorded JSON.** A page of buttons is a list of `[id, label, description]` rows and a function that turns them into components (see `PAGES` in `commands/setup/setup.js`). Adding a button is then one line.
+- **Load heavy libraries on first use**, not at the top of a file that every command imports (see `utils/render/canvas.js`).
+
+Before every commit run:
+
+```
+npm run check
+```
+
+It runs ESLint and the tests in `test/`. They need no token and no database, and they check that every file loads, names are unique, every slash command points at a command that exists, no two routes clash, and every `path.join(__dirname, ...)` file exists.
+
 > 🐾 Actively developed — may still have bugs.
 
 <div align="center">

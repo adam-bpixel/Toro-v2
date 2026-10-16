@@ -1,4 +1,4 @@
-const { getBalance, addBalance } = require('../../models/economy/economy');
+const { getBalance, addBalance, spendBalance } = require('../../models/economy/economy');
 const { card, notice } = require('../../utils/render/embeds');
 const { comma, parseAmount } = require('../../utils/format');
 const { hit } = require('../../utils/runtime/cooldown');
@@ -40,9 +40,10 @@ module.exports = {
       return notice(message, `__Slow down, try again in ${Math.ceil(cd.remainingMs / 1000)}s__`);
     }
 
+    const afterBet = await spendBalance(message.author.id, amount);
+    if (afterBet === null) return notice(message, `__You don't have \`${comma(amount)}\` ${EMOJI.coin}__`);
     const won = Math.random() < 0.5;
-    const delta = won ? amount : -amount;
-    const newBalance = await addBalance(message.author.id, delta);
+    const newBalance = won ? await addBalance(message.author.id, amount * 2) : afterBet;
 
     await card(message, {
       title: 'Luck',

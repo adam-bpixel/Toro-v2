@@ -8,6 +8,7 @@ const ROWS = [
 module.exports = {
   name: "untimeout",
   data: buildData("untimeout", ROWS),
+  rows: ROWS,
   async execute(interaction) {
     return dispatch(interaction, ROWS);
   },
